@@ -1,0 +1,51 @@
+.idea
+vendor
+.vscode
+.makerc
+.DS_Store
+*.swp
+*.code-workspace
+
+*.proto-descriptor
+*-packr.go
+
+# == Terraform ==
+# Local .terraform directories
+**/.terraform
+
+# .tfstate files
+*.tfstate
+*.tfstate.*
+*.tfvars
+
+# kubeconfig files
+kubeconfig-*
+
+# Crash log files
+crash.log
+
+# Ignore any .tfvars files that are generated automatically for each Terraform run. Most
+# .tfvars files are managed as part of configuration and so should be included in
+# version control.
+#
+# example.tfvars
+
+*.json-e
+
+**/generated/ts
+yarn
+node_modules
+bin
+
+test.sh
+*.kubeconfig
+*.bak
+
+assets.gen.go
+
+/bazel-*
+/venv*
+__pycache__/
+*.py[cod]
+.dmypy.json
+.vimrc
