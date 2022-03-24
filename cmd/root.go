@@ -1,10 +1,7 @@
-/*
-Copyright © 2022 Tetrate
-
-*/
 package cmd
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -12,9 +9,11 @@ import (
 
 var rootCmd = &cobra.Command{
 	Use:   "dapani",
-	Short: "Istio cost tooling",
-	Long:  ``,
-	Run:   func(cmd *cobra.Command, args []string) {},
+	Short: "Istio Cost Tooling",
+
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Println("yo")
+	},
 }
 
 func Execute() {
@@ -26,7 +25,16 @@ func Execute() {
 
 func init() {
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.dapani.yaml)")
+	/*
+			flags for:
+			- kubeconfig location
+				default is filepath.Join(home, ".kube", "config"), home=homedir.HomeDir()
+		use client-go
+		use prometheus to get kubernetes_pod_name and destination_pod
+		query nodes of kubernetes_pod_name and destination_pod
+		query regions/localities of nodes of kubernetes_pod_name and destination_pod
+		apply cross-region
+	*/
 
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
