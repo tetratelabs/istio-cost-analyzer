@@ -1,7 +1,11 @@
 package pkg
 
 import (
+	"context"
 	"fmt"
+	"github.com/prometheus/client_golang/api"
+	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
+	"github.com/prometheus/common/model"
 	"net/http"
 	"os/exec"
 	"time"
@@ -10,13 +14,22 @@ import (
 type DapaniProm struct {
 	promEndpoint string
 	errChan      chan error
+	client       api.Client
 }
 
-func NewDapaniProm(promEndpoint string) *DapaniProm {
+func NewDapaniProm(promEndpoint string) (*DapaniProm, error) {
+	client, err := api.NewClient(api.Config{
+		Address: promEndpoint,
+	})
+	if err != nil {
+		fmt.Printf("cannot initialize prom lib: %v", err)
+		return nil, err
+	}
 	return &DapaniProm{
 		promEndpoint: promEndpoint,
 		errChan:      make(chan error),
-	}
+		client:       client,
+	}, nil
 }
 
 func (d *DapaniProm) PortForwardProm() {
@@ -45,4 +58,29 @@ func (d *DapaniProm) WaitForProm() error {
 			return e
 		}
 	}
+}
+func (d *DapaniProm) GetPodCalls() ([]*PodCall, error) {
+	promApi := v1.NewAPI(d.client)
+	calls := make([]*PodCall, 0)
+	query := "istio_request_bytes_sum{destination_pod!=\"\", destination_pod!=\"unknown\"}"
+	result, warn, err := promApi.Query(context.Background(), query, time.Now())
+	if err != nil {
+		fmt.Printf("error querying prom: %v", err)
+		return nil, err
+	}
+	if len(warn) > 0 {
+		fmt.Printf("Warn: %v", warn)
+	}
+	v := result.(model.Vector)
+	for i := 0; i < len(v); i++ {
+		calls = append(calls, &PodCall{
+			ToPod:    string(v[i].Metric["destination_pod"]),
+			FromPod:  string(v[i].Metric["kubernetes_pod_name"]),
+			CallSize: uint64(v[i].Value),
+		})
+	}
+	//for i := 0; i < len(calls); i++ {
+	//	fmt.Printf("(%v) -> (%v) for %v\n", calls[i].FromPod, calls[i].ToPod, calls[i].CallSize)
+	//}
+	return calls, nil
 }
