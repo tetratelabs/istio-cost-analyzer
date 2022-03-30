@@ -60,9 +60,11 @@ func (k *KubeClient) GetLocalityCalls(podCalls []*PodCall) ([]*Call, error) {
 			return nil, err
 		}
 		calls = append(calls, &Call{
-			From:     fromLocality,
-			To:       toLocality,
-			CallSize: podCalls[i].CallSize,
+			From:         fromLocality,
+			To:           toLocality,
+			FromWorkload: podCalls[i].FromWorkload,
+			ToWorkload:   podCalls[i].ToWorkload,
+			CallSize:     podCalls[i].CallSize,
 		})
 	}
 	return calls, nil
@@ -86,6 +88,6 @@ func (k *KubeClient) getNodeLocality(name string) (*Locality, error) {
 	return &Locality{
 		Region:  node.Labels["topology.kubernetes.io/region"],
 		Zone:    node.Labels["topology.kubernetes.io/zone"],
-		Subzone: node.Labels["topology.istio.io/subzone "],
+		Subzone: node.Labels["topology.istio.io/subzone"],
 	}, nil
 }

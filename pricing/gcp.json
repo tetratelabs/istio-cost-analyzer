@@ -1,0 +1,26 @@
+{
+  "inter-zone-intra-region": {
+    "us": "0.01",
+    "northamerica": "0.01",
+    "eu": "0.01",
+    "asia": "0.01",
+    "southamerica": "0.01",
+    "australia": "0.01"
+  },
+  "inter-region-intra-continent": {
+    "us": "0.01",
+    "northamerica": "0.01",
+    "eu": "0.02",
+    "asia": "0.05",
+    "southamerica": "0.08",
+    "australia": "0.08"
+  },
+  "inter-continent": {
+    "us": "0.08",
+    "northamerica": "0.08",
+    "eu": "0.08",
+    "asia": "0.08",
+    "southamerica": "0.08",
+    "australia": "0.15"
+  }
+}

@@ -34,8 +34,12 @@ var analyzeCmd = &cobra.Command{
 		for _, l := range localityCalls {
 			fmt.Printf("%v\n", l.String())
 		}
+		for {
+		}
 		return nil
 		// egress from -> to
+
+		// https://cloud.google.com/vpc/network-pricing
 	},
 }
 
