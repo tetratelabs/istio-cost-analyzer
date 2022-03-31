@@ -50,7 +50,7 @@ func (d *DapaniProm) WaitForProm() error {
 		case <-ticker.C:
 			r, e := http.Get(d.promEndpoint)
 			if e == nil {
-				fmt.Printf("prometheus is ready! (%v)\n", r.StatusCode)
+				fmt.Printf("Prometheus is ready! (Code: %v)\n", r.StatusCode)
 				ticker.Stop()
 				return nil
 			}
@@ -59,11 +59,18 @@ func (d *DapaniProm) WaitForProm() error {
 		}
 	}
 }
-func (d *DapaniProm) GetPodCalls() ([]*PodCall, error) {
+func (d *DapaniProm) GetPodCalls(since time.Duration) ([]*PodCall, error) {
 	promApi := v1.NewAPI(d.client)
 	calls := make([]*PodCall, 0)
 	query := "istio_request_bytes_sum{destination_pod!=\"\", destination_pod!=\"unknown\"}"
-	result, warn, err := promApi.Query(context.Background(), query, time.Now())
+	var result model.Value
+	var warn v1.Warnings
+	var err error
+	if since == 0 {
+		result, warn, err = promApi.Query(context.Background(), query, time.Now())
+	} else {
+		result, warn, err = promApi.Query(context.Background(), query, time.Now().Add(-since))
+	}
 	if err != nil {
 		fmt.Printf("error querying prom: %v", err)
 		return nil, err

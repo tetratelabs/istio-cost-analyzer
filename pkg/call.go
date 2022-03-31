@@ -7,11 +7,16 @@ type Call struct {
 	FromWorkload string
 	To           *Locality
 	ToWorkload   string
+	CallCost     float64
 	CallSize     uint64
 }
 
 func (c *Call) String() string {
 	return fmt.Sprintf("%v (%v)->%v (%v) : %v", c.FromWorkload, c.From.Zone, c.ToWorkload, c.To.Zone, c.CallSize)
+}
+
+func (c *Call) StringCost() string {
+	return fmt.Sprintf("%v (%v)->%v (%v) : $%v", c.FromWorkload, c.From.Zone, c.ToWorkload, c.To.Zone, c.CallCost)
 }
 
 type PodCall struct {
