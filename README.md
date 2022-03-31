@@ -62,4 +62,16 @@ Run:
 dapani analyze
 ```
 
-
+This assumes your cluster is on GCP. To change this to the two options of AWS and Azure, run as follows:
+```
+dapani analyze --cloud aws
+```
+To point dapani to your own pricing sheet, run as follows:
+```
+dapani analyze --pricePath <path to .json>
+```
+To only use data from a specific time range, run as follows:
+```
+dapani analyze --queryBefore 10h
+```
+This will only use call data from 10 hours ago and previous.
