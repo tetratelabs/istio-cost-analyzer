@@ -50,7 +50,7 @@ spec:
 
 ### Running
 
-To Build `istio-cost-analyzer`:
+To Build `istio-cost-analyzer` (inside the `istio-cost-analyzer` repo):
 
 ```
 go install
