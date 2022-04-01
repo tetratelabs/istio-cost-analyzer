@@ -5,6 +5,7 @@ import (
 	"github.com/olekukonko/tablewriter"
 	"math"
 	"os"
+	"sort"
 )
 
 type Call struct {
@@ -27,6 +28,9 @@ func (c *Call) StringCost() string {
 func PrintCostTable(calls []*Call) {
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"Source Workload", "Source Locality", "Destination Workload", "Destination Locality", "MBs tranferred", "Cost"})
+	sort.Slice(calls, func(i, j int) bool {
+		return calls[i].CallCost > calls[j].CallCost
+	})
 	for _, v := range calls {
 		cost := fmt.Sprintf("%f", v.CallCost)
 		if v.CallCost < 0.01 {
