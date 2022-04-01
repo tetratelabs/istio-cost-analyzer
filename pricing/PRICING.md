@@ -1,8 +1,8 @@
 # Pricing Egress
-When provided with the "aws" or "gcp" option, Dapani reads from `gcp.json` and `aws.json`
+When provided with the "aws" or "gcp" option, the cost tool reads from `gcp.json` and `aws.json`
 to derive egress rates. If you have a negotiated/different rate, you can modify these
 files, and if you have a different cloud/on-prem setup, you may create your own JSON file
-that corresponds to this schema and point Dapani to it.
+that corresponds to this schema and point the cost tool to it.
 
 ## The Schema
 

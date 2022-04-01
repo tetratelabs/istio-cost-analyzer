@@ -1,6 +1,6 @@
 package main
 
-import "dapani/cmd"
+import "istio-cost-analyzer/cmd"
 
 func main() {
 	cmd.Execute()

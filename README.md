@@ -1,6 +1,6 @@
-# Dapani
+# Istio Cost Analyzer
 
-Dapani is a tool that allows you to analyze the costliest workload links in your cluster. It relies on Kubernetes/Istio and Prometheus to gather
+The Istio Cost Analyzer is a tool that allows you to analyze the costliest workload links in your cluster. It relies on Kubernetes/Istio and Prometheus to gather
 data, and uses publicly-available cloud egress rates to estimate the overall egress costs of your services.
 
 ## Usage
@@ -9,7 +9,7 @@ To use this on your kubernetes cluster, make sure you have a kubeconfig in your 
 
 ### Creating `destination_pod`
 
-First, you must create the `destination_pod` metric for Dapani to read from.
+First, you must create the `destination_pod` metric for the cost tool to read from.
 
 Add the following to all of your deployments:
 
@@ -50,7 +50,7 @@ spec:
 
 ### Running
 
-To Build `dapani`:
+To Build `istio-cost-analyzer`:
 
 ```
 go install
@@ -59,19 +59,19 @@ go install
 Run:
 
 ```
-dapani analyze
+istio-cost-analyzer analyze
 ```
 
 This assumes your cluster is on GCP. To change this to the two options of AWS and Azure, run as follows:
 ```
-dapani analyze --cloud aws
+istio-cost-analyzer analyze --cloud aws
 ```
-To point dapani to your own pricing sheet, run as follows:
+To point the cost analyzer to your own pricing sheet, run as follows:
 ```
-dapani analyze --pricePath <path to .json>
+istio-cost-analyzer analyze --pricePath <path to .json>
 ```
 To only use data from a specific time range, run as follows:
 ```
-dapani analyze --queryBefore 10h
+istio-cost-analyzer analyze --queryBefore 10h
 ```
 This will only use call data from 10 hours ago and previous.

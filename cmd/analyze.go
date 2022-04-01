@@ -1,9 +1,9 @@
 package cmd
 
 import (
-	"dapani/pkg"
 	"fmt"
 	"github.com/spf13/cobra"
+	"istio-cost-analyzer/pkg"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"time"
 )

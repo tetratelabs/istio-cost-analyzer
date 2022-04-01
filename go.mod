@@ -1,4 +1,4 @@
-module dapani
+module istio-cost-analyzer
 
 go 1.17
 

@@ -88,8 +88,5 @@ func (d *DapaniProm) GetPodCalls(since time.Duration) ([]*PodCall, error) {
 			CallSize:     uint64(v[i].Value),
 		})
 	}
-	//for i := 0; i < len(calls); i++ {
-	//	fmt.Printf("(%v) -> (%v) for %v\n", calls[i].FromPod, calls[i].ToPod, calls[i].CallSize)
-	//}
 	return calls, nil
 }
