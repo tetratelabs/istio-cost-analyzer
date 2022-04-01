@@ -25,9 +25,11 @@ func (c *Call) StringCost() string {
 	return fmt.Sprintf("%v (%v)->%v (%v) : $%v", c.FromWorkload, c.From.Zone, c.ToWorkload, c.To.Zone, c.CallCost)
 }
 
-func PrintCostTable(calls []*Call) {
+// todo minified cost (group by source)
+
+func PrintCostTable(calls []*Call, total float64) {
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Source Workload", "Source Locality", "Destination Workload", "Destination Locality", "MBs tranferred", "Cost"})
+	table.SetHeader([]string{"Source Workload", "Source Locality", "Destination Workload", "Destination Locality", "Transferred (MB)", "Cost"})
 	sort.Slice(calls, func(i, j int) bool {
 		return calls[i].CallCost > calls[j].CallCost
 	})
@@ -41,6 +43,9 @@ func PrintCostTable(calls []*Call) {
 		}
 		table.Append([]string{v.FromWorkload, v.From.Zone, v.ToWorkload, v.To.Zone, fmt.Sprintf("%f", float64(v.CallSize)/math.Pow(10, 6)), cost})
 	}
+	table.SetBorder(false)
+	table.SetFooter([]string{"", "", "", "", "total", fmt.Sprintf("$%f", total)})
+	fmt.Println()
 	table.Render()
 }
 

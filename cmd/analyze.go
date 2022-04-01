@@ -48,14 +48,11 @@ var analyzeCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		localityCalls[1].To = &pkg.Locality{
-			Zone: "eu-west1-b",
-		}
-		_, err = cost.CalculateEgress(localityCalls)
+		totalCost, err := cost.CalculateEgress(localityCalls)
 		if err != nil {
 			return err
 		}
-		pkg.PrintCostTable(localityCalls)
+		pkg.PrintCostTable(localityCalls, totalCost)
 		return nil
 	},
 }
