@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"github.com/spf13/cobra"
 	"istio-cost-analyzer/pkg"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
@@ -52,14 +51,11 @@ var analyzeCmd = &cobra.Command{
 		localityCalls[1].To = &pkg.Locality{
 			Zone: "eu-west1-b",
 		}
-		costTot, err := cost.CalculateEgress(localityCalls)
+		_, err = cost.CalculateEgress(localityCalls)
 		if err != nil {
 			return err
 		}
-		fmt.Printf("\nTotal cost of all calls in cluster: $%v\n\nWorkload basis:\n", costTot)
-		for _, v := range localityCalls {
-			fmt.Println(v.StringCost())
-		}
+		pkg.PrintCostTable(localityCalls)
 		return nil
 	},
 }
