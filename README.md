@@ -75,3 +75,19 @@ To only use data from a specific time range, run as follows:
 istio-cost-analyzer analyze --queryBefore 10h
 ```
 This will only use call data from 10 hours ago and previous.
+
+The output should look like (running with bookinfo with one workload in `eu-west1-b`): 
+
+```
+  SOURCE WORKLOAD | SOURCE LOCALITY | DESTINATION WORKLOAD | DESTINATION LOCALITY | TRANSFERRED (MB) |   COST     
+------------------+-----------------+----------------------+----------------------+------------------+------------
+  productpage-v1  | us-west1-b      | details-v1           | eu-west1-b           |         0.148500 | <$0.01     
+  productpage-v1  | us-west1-b      | reviews-v1           | us-west1-b           |         0.049500 | -          
+  productpage-v1  | us-west1-b      | reviews-v2           | us-west1-b           |         0.049500 | -          
+  productpage-v1  | us-west1-b      | reviews-v3           | us-west1-b           |         0.049500 | -          
+  reviews-v2      | us-west1-b      | ratings-v1           | us-west1-b           |         0.049400 | -          
+  reviews-v3      | us-west1-b      | ratings-v1           | us-west1-b           |         0.049400 | -          
+------------------+-----------------+----------------------+----------------------+------------------+------------
+                                                                                         TOTAL       | $0.000012  
+                                                                                  -------------------+------------
+```
