@@ -76,18 +76,30 @@ istio-cost-analyzer analyze --queryBefore 10h
 ```
 This will only use call data from 10 hours ago and previous.
 
-The output should look like (running with bookinfo with one workload in `eu-west1-b`): 
+The output should look like (without `--details`): 
 
 ```
-  SOURCE WORKLOAD | SOURCE LOCALITY | DESTINATION WORKLOAD | DESTINATION LOCALITY | TRANSFERRED (MB) |   COST     
-------------------+-----------------+----------------------+----------------------+------------------+------------
-  productpage-v1  | us-west1-b      | details-v1           | eu-west1-b           |         0.148500 | <$0.01     
-  productpage-v1  | us-west1-b      | reviews-v1           | us-west1-b           |         0.049500 | -          
-  productpage-v1  | us-west1-b      | reviews-v2           | us-west1-b           |         0.049500 | -          
-  productpage-v1  | us-west1-b      | reviews-v3           | us-west1-b           |         0.049500 | -          
-  reviews-v2      | us-west1-b      | ratings-v1           | us-west1-b           |         0.049400 | -          
-  reviews-v3      | us-west1-b      | ratings-v1           | us-west1-b           |         0.049400 | -          
-------------------+-----------------+----------------------+----------------------+------------------+------------
-                                                                                         TOTAL       | $0.000012  
-                                                                                  -------------------+------------
+Total: <$0.01
+
+  SOURCE WORKLOAD | SOURCE LOCALITY |  COST   
+------------------+-----------------+---------
+  productpage-v1  | us-west1-b      | <$0.01  
+  reviews-v2      | us-west1-b      | -       
+  reviews-v3      | us-west1-b      | -   ```
+```
+With `--details`:
+
+```
+Total: <$0.01
+
+  SOURCE WORKLOAD | SOURCE LOCALITY | DESTINATION WORKLOAD | DESTINATION LOCALITY | TRANSFERRED (MB) |  COST   
+------------------+-----------------+----------------------+----------------------+------------------+---------
+  productpage-v1  | us-west1-b      | details-v1           | eu-west-1            |         0.173250 | <$0.01  
+  productpage-v1  | us-west1-b      | reviews-v1           | us-west1-b           |         0.058500 | -       
+  productpage-v1  | us-west1-b      | reviews-v2           | us-west1-b           |         0.056250 | -       
+  productpage-v1  | us-west1-b      | reviews-v3           | us-west1-b           |         0.058500 | -       
+  reviews-v2      | us-west1-b      | ratings-v1           | us-west1-b           |         0.056150 | -       
+  reviews-v3      | us-west1-b      | ratings-v1           | us-west1-b           |         0.058400 | -       
+
+
 ```
