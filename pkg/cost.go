@@ -56,13 +56,13 @@ func (c *CostAnalysis) CalculateEgress(calls []*Call) (float64, error) {
 		// the way v.To/From is being used is kind of broken, todo fix
 		dataRateStr := "0"
 		var ok bool
-		if c.GetContinent(v.To.Zone) == c.GetContinent(v.From.Zone) {
-			if c.GetRegion(v.To.Zone) == c.GetRegion(v.From.Zone) {
-				if c.GetZone(v.To.Zone) == c.GetZone(v.From.Zone) {
+		if c.GetContinent(v.To) == c.GetContinent(v.From) {
+			if c.GetRegion(v.To) == c.GetRegion(v.From) {
+				if c.GetZone(v.To) == c.GetZone(v.From) {
 					// within same zone, no-op
 				} else {
 					// inter-zone rate for "to"
-					dataRateInterface := c.pricing.InterZone[c.GetContinent(v.To.Zone)]
+					dataRateInterface := c.pricing.InterZone[c.GetContinent(v.To)]
 					dataRateStr, ok = dataRateInterface.(string)
 					if !ok {
 						return 0, errors.New(fmt.Sprintf("%v is not a string", dataRateStr))
@@ -70,7 +70,7 @@ func (c *CostAnalysis) CalculateEgress(calls []*Call) (float64, error) {
 				}
 			} else {
 				// inter-region rate for "to"
-				dataRateInterface := c.pricing.InterRegion[c.GetContinent(v.To.Zone)]
+				dataRateInterface := c.pricing.InterRegion[c.GetContinent(v.To)]
 				dataRateStr, ok = dataRateInterface.(string)
 				if !ok {
 					return 0, errors.New(fmt.Sprintf("%v is not a string", dataRateStr))
@@ -78,7 +78,7 @@ func (c *CostAnalysis) CalculateEgress(calls []*Call) (float64, error) {
 			}
 		} else {
 			// inter-continent rate for "to"
-			dataRateInterface := c.pricing.InterContinent[c.GetContinent(v.To.Zone)]
+			dataRateInterface := c.pricing.InterContinent[c.GetContinent(v.To)]
 			dataRateStr, ok = dataRateInterface.(string)
 			if !ok {
 				return 0, errors.New(fmt.Sprintf("%v is not a string", dataRateStr))
@@ -86,7 +86,7 @@ func (c *CostAnalysis) CalculateEgress(calls []*Call) (float64, error) {
 		}
 		rate, err := strconv.ParseFloat(dataRateStr, 64)
 		if err != nil {
-			fmt.Printf("unable to parse rate %v, skipping...", c.pricing.InterZone[c.GetZone(v.To.Zone)])
+			fmt.Printf("unable to parse rate %v, skipping...", c.pricing.InterZone[c.GetZone(v.To)])
 		}
 		indivCost := rate * (float64(v.CallSize) / math.Pow(10, 9))
 		totalCost += indivCost

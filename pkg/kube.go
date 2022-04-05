@@ -79,15 +79,11 @@ func (k *KubeClient) getPodNode(name string) (string, error) {
 	return pod.Spec.NodeName, nil
 }
 
-func (k *KubeClient) getNodeLocality(name string) (*Locality, error) {
+func (k *KubeClient) getNodeLocality(name string) (string, error) {
 	node, err := k.clientSet.CoreV1().Nodes().Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
 		fmt.Printf("error in getting node %v: %v\n", name, err)
-		return nil, err
+		return "", err
 	}
-	return &Locality{
-		Region:  node.Labels["topology.kubernetes.io/region"],
-		Zone:    node.Labels["topology.kubernetes.io/zone"],
-		Subzone: node.Labels["topology.istio.io/subzone"],
-	}, nil
+	return node.Labels["topology.kubernetes.io/zone"], nil
 }
