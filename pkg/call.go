@@ -9,20 +9,20 @@ import (
 )
 
 type Call struct {
-	From         *Locality
+	From         string
 	FromWorkload string
-	To           *Locality
+	To           string
 	ToWorkload   string
 	CallCost     float64
 	CallSize     uint64
 }
 
 func (c *Call) String() string {
-	return fmt.Sprintf("%v (%v)->%v (%v) : %v", c.FromWorkload, c.From.Zone, c.ToWorkload, c.To.Zone, c.CallSize)
+	return fmt.Sprintf("%v (%v)->%v (%v) : %v", c.FromWorkload, c.From, c.ToWorkload, c.To, c.CallSize)
 }
 
 func (c *Call) StringCost() string {
-	return fmt.Sprintf("%v (%v)->%v (%v) : $%v", c.FromWorkload, c.From.Zone, c.ToWorkload, c.To.Zone, c.CallCost)
+	return fmt.Sprintf("%v (%v)->%v (%v) : $%v", c.FromWorkload, c.From, c.ToWorkload, c.To, c.CallCost)
 }
 
 func PrintCostTable(calls []*Call, total float64, details bool) {
@@ -44,7 +44,7 @@ func PrintCostTable(calls []*Call, total float64, details bool) {
 	headers := []string{"Source Workload", "Source Locality", "Destination Workload", "Destination Locality", "Transferred (MB)", "Cost"}
 	table.SetHeader(headers)
 	for _, v := range calls {
-		values := []string{v.FromWorkload, v.From.Zone, v.ToWorkload, v.To.Zone, fmt.Sprintf("%f", float64(v.CallSize)/math.Pow(10, 6)), transformCost(v.CallCost)}
+		values := []string{v.FromWorkload, v.From, v.ToWorkload, v.To, fmt.Sprintf("%f", float64(v.CallSize)/math.Pow(10, 6)), transformCost(v.CallCost)}
 		table.Append(values)
 	}
 	table.SetBorder(false)
@@ -78,7 +78,7 @@ func printMinifiedCostTable(calls []*Call) {
 	headers := []string{"Source Workload", "Source Locality", "Cost"}
 	table.SetHeader(headers)
 	for _, v := range callSlice {
-		values := []string{v.FromWorkload, v.From.Zone, transformCost(v.CallCost)}
+		values := []string{v.FromWorkload, v.From, transformCost(v.CallCost)}
 		table.Append(values)
 	}
 	table.SetBorder(false)
@@ -103,10 +103,4 @@ type PodCall struct {
 	ToPod        string
 	ToWorkload   string
 	CallSize     uint64
-}
-
-type Locality struct {
-	Region  string
-	Zone    string
-	Subzone string
 }
