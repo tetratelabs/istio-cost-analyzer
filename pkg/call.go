@@ -47,7 +47,7 @@ func PrintCostTable(calls []*Call, total float64, details bool) {
 		values := []string{v.FromWorkload, v.From, v.ToWorkload, v.To, fmt.Sprintf("%f", float64(v.CallSize)/math.Pow(10, 6)), transformCost(v.CallCost)}
 		table.Append(values)
 	}
-	table.SetBorder(false)
+	kubernetesify(table)
 	table.Render()
 	fmt.Println()
 }
@@ -81,7 +81,7 @@ func printMinifiedCostTable(calls []*Call) {
 		values := []string{v.FromWorkload, v.From, transformCost(v.CallCost)}
 		table.Append(values)
 	}
-	table.SetBorder(false)
+	kubernetesify(table)
 	table.Render()
 	fmt.Println()
 }
@@ -95,6 +95,21 @@ func transformCost(cost float64) string {
 		costStr = "-"
 	}
 	return costStr
+}
+
+func kubernetesify(table *tablewriter.Table) {
+	table.SetAutoWrapText(false)
+	table.SetAutoFormatHeaders(true)
+	table.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
+	table.SetAlignment(tablewriter.ALIGN_LEFT)
+	table.SetCenterSeparator("")
+	table.SetColumnSeparator("")
+	table.SetRowSeparator("")
+	table.SetHeaderLine(false)
+	table.SetBorder(false)
+	table.SetTablePadding("\t") // pad with tabs
+	table.SetNoWhiteSpace(true)
+	table.SetBorder(false)
 }
 
 type PodCall struct {
