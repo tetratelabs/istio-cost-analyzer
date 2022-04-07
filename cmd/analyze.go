@@ -27,7 +27,7 @@ var analyzeCmd = &cobra.Command{
 			return err
 		}
 		if pricePath == "" {
-			pricePath = "pricing/" + cloud + ".json"
+			pricePath = "pricing/" + cloud + "_pricing.json"
 		}
 		cost, err := pkg.NewCostAnalysis(pricePath)
 		if err != nil {
