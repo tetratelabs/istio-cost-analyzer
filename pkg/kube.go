@@ -41,7 +41,12 @@ func NewDapaniKubeClient() *KubeClient {
 }
 
 func (k *KubeClient) GetLocalityCalls(podCalls []*PodCall) ([]*Call, error) {
+	// todo collapse all pod<->pod links into service<->service links
+	// 	grouped pod to service/locality combination
 	calls := make([]*Call, 0)
+	// key is just source/destination service/locality. No call size info
+	// value is full Call
+	serviceCallMap := make(map[Call]*Call)
 	for i := 0; i < len(podCalls); i++ {
 		fromNode, err := k.getPodNode(podCalls[i].FromPod)
 		if err != nil {
@@ -59,13 +64,21 @@ func (k *KubeClient) GetLocalityCalls(podCalls []*PodCall) ([]*Call, error) {
 		if err != nil {
 			return nil, err
 		}
-		calls = append(calls, &Call{
-			From:         fromLocality,
-			To:           toLocality,
+		serviceLocalityKey := Call{
 			FromWorkload: podCalls[i].FromWorkload,
+			From:         fromLocality,
 			ToWorkload:   podCalls[i].ToWorkload,
-			CallSize:     podCalls[i].CallSize,
-		})
+			To:           toLocality,
+		}
+		if _, ok := serviceCallMap[serviceLocalityKey]; !ok {
+			serviceCallMap[serviceLocalityKey] = &serviceLocalityKey
+			serviceLocalityKey.CallSize = podCalls[i].CallSize
+		} else {
+			serviceCallMap[serviceLocalityKey].CallSize += podCalls[i].CallSize
+		}
+	}
+	for _, v := range serviceCallMap {
+		calls = append(calls, v)
 	}
 	return calls, nil
 }

@@ -80,6 +80,7 @@ func (d *DapaniProm) GetPodCalls(since time.Duration) ([]*PodCall, error) {
 	}
 	v := result.(model.Vector)
 	for i := 0; i < len(v); i++ {
+		// todo collapse pod<->pod into workload<->workload
 		calls = append(calls, &PodCall{
 			ToPod:        string(v[i].Metric["destination_pod"]),
 			FromPod:      string(v[i].Metric["kubernetes_pod_name"]),
