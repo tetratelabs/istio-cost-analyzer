@@ -1,12 +1,20 @@
 # Pricing Egress
-When provided with the "aws" or "gcp" option, the cost tool reads from `gcp.json` and `aws.json`
-to derive egress rates. If you have a negotiated/different rate, you can modify these
-files, and if you have a different cloud/on-prem setup, you may create your own JSON file
-that corresponds to this schema and point the cost tool to it.
 
-## The Schema
+The cost tool reads rates in a "flat" format, which means:
 
-The JSON file it split up into three parts:
+```json
+{
+  "us-west1-b": {
+    "us-west1-c": 0.05
+  }
+}
+```
+Here, the first entry (`us-west1-b`) is the call origin, and the nested entry (`us-west1-c`) is the call
+destination. The value to that is the egress rate in $/GB.
+
+You can use `format_converter.go` to transform a somewhat generalized and structured egress pricing 
+structure to the flat one (flat structures can go on for thousands of lines). To do this, put
+your egress pricing in the following schema:
  - `inter-zone-intra-region`: Across Zones within a Region
  - `inter-region-intra-continent`: Across Regions within a Continent
  - `inter-continent`: Across Continents
@@ -26,4 +34,12 @@ An example from
   }
 ```
 This means, for example, if `us-west-1` calls `us-west-2` for `x` GB, there is an egress
-charge of $0.01*x.
+charge of $0.01*x. You would repeat this for `inter-region-intra-continent` and `inter-continent`.
+
+After this, you can run `format_converter.go` like so:
+
+```shell
+go run pricing/format_converter.go --in pricing/gcp.json --out pricing/gcp_pricing.json
+```
+
+Where `pricing/gcp.json` holds structured rates and `pricing/gcp_pricing.json` holds outputted flat rates. 
