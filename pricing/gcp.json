@@ -3,6 +3,7 @@
     "us": "0.01",
     "northamerica": "0.01",
     "eu": "0.01",
+    "europe": "0.01",
     "asia": "0.01",
     "southamerica": "0.01",
     "australia": "0.01"
@@ -11,6 +12,7 @@
     "us": "0.01",
     "northamerica": "0.01",
     "eu": "0.02",
+    "europe": "0.01",
     "asia": "0.05",
     "southamerica": "0.08",
     "australia": "0.08"
@@ -19,6 +21,7 @@
     "us": "0.08",
     "northamerica": "0.08",
     "eu": "0.08",
+    "europe": "0.01",
     "asia": "0.08",
     "southamerica": "0.08",
     "australia": "0.15"
