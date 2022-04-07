@@ -1,0 +1,14 @@
+{
+  "us-west1-a": {
+    "us-west1-b": 0.01,
+    "us-west1-c": 0.02
+  },
+  "us-west1-b": {
+    "us-west1-a": 0.03,
+    "us-west1-c": 0.01
+  },
+  "us-west1-c": {
+    "us-west1-a": 0.01,
+    "us-west1-b": 0.05
+  }
+}

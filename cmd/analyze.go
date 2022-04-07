@@ -21,27 +21,27 @@ var analyzeCmd = &cobra.Command{
 	Short: "List all the pod to pod links in the mesh",
 	Long:  ``,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		dapani, err := pkg.NewDapaniProm(prometheusEndpoint)
+		prom, err := pkg.NewAnalyzerProm(prometheusEndpoint)
 		kubeClient := pkg.NewDapaniKubeClient()
 		if err != nil {
 			return err
 		}
 		if pricePath == "" {
-			pricePath = "pricing/" + cloud + ".json"
+			pricePath = "pricing/" + cloud + "_pricing.json"
 		}
 		cost, err := pkg.NewCostAnalysis(pricePath)
 		if err != nil {
 			return err
 		}
-		go dapani.PortForwardProm()
-		if err := dapani.WaitForProm(); err != nil {
+		go prom.PortForwardProm()
+		if err := prom.WaitForProm(); err != nil {
 			return err
 		}
 		duration, err := time.ParseDuration(queryBefore)
 		if err != nil {
 			return err
 		}
-		podCalls, err := dapani.GetPodCalls(duration)
+		podCalls, err := prom.GetPodCalls(duration)
 		if err != nil {
 			return err
 		}
