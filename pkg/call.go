@@ -27,11 +27,7 @@ func (c *Call) StringCost() string {
 
 func PrintCostTable(calls []*Call, total float64, details bool) {
 	// print total
-	totalCost := "<$0.01"
-	if total >= 0.01 {
-		totalCost = fmt.Sprintf("%f", total)
-	}
-	fmt.Printf("\nTotal: %s\n\n", totalCost)
+	fmt.Printf("\nTotal: %s\n\n", transformCost(total))
 	if !details {
 		printMinifiedCostTable(calls)
 		return
@@ -87,7 +83,7 @@ func printMinifiedCostTable(calls []*Call) {
 }
 
 func transformCost(cost float64) string {
-	costStr := fmt.Sprintf("%f", cost)
+	costStr := fmt.Sprintf("$%.2f", cost)
 	if cost < 0.01 {
 		costStr = "<$0.01"
 	}
