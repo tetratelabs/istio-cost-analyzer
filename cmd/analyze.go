@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"errors"
+	"fmt"
 	"github.com/spf13/cobra"
 	"istio-cost-analyzer/pkg"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
@@ -16,6 +18,11 @@ var (
 	details     bool
 )
 
+const (
+	gcpPricingLocation = "https://raw.githubusercontent.com/tetratelabs/istio-cost-analyzer/master/pricing/gcp_pricing.json"
+	awsPricingLocation = "https://github.com/tetratelabs/istio-cost-analyzer/blob/master/pricing/aws/aws_pricing.json"
+)
+
 var analyzeCmd = &cobra.Command{
 	Use:   "analyze",
 	Short: "List all the pod to pod links in the mesh",
@@ -27,7 +34,14 @@ var analyzeCmd = &cobra.Command{
 			return err
 		}
 		if pricePath == "" {
-			pricePath = "pricing/" + cloud + "_pricing.json"
+			if cloud == "gcp" {
+				pricePath = gcpPricingLocation
+			} else if cloud == "aws" {
+				pricePath = awsPricingLocation
+			} else {
+				fmt.Println("when no price path is provided, the only supported clouds are gcp and aws.")
+				return errors.New("provide different cloud")
+			}
 		}
 		cost, err := pkg.NewCostAnalysis(pricePath)
 		if err != nil {
@@ -49,7 +63,6 @@ var analyzeCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		localityCalls[2].To = "us-west1-c"
 		totalCost, err := cost.CalculateEgress(localityCalls)
 		if err != nil {
 			return err

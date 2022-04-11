@@ -2,8 +2,11 @@ package pkg
 
 import (
 	"fmt"
+	"io"
 	"k8s.io/apimachinery/pkg/util/json"
 	"math"
+	"net/http"
+	"net/url"
 	"os"
 )
 
@@ -20,12 +23,28 @@ type PricingGCP struct {
 	InterContinent map[string]interface{} `json:"inter-continent"`
 }
 
-func NewCostAnalysis(priceSheetPath string) (*CostAnalysis, error) {
+func NewCostAnalysis(priceSheetLocation string) (*CostAnalysis, error) {
 	pricing := Pricing{}
-	data, err := os.ReadFile(priceSheetPath)
-	if err != nil {
-		fmt.Printf("unable to read file %v: %v", priceSheetPath, err)
-		return nil, err
+	var data []byte
+	var err error
+	if isValidUrl(priceSheetLocation) {
+		resp, err := http.Get(priceSheetLocation)
+		if err != nil {
+			fmt.Println(err)
+			return nil, err
+		}
+		defer resp.Body.Close()
+		data, err = io.ReadAll(resp.Body)
+		if err != nil {
+			fmt.Println(err)
+			return nil, err
+		}
+	} else {
+		data, err = os.ReadFile(priceSheetLocation)
+		if err != nil {
+			fmt.Printf("unable to read file %v: %v", priceSheetLocation, err)
+			return nil, err
+		}
 	}
 	err = json.Unmarshal(data, &pricing)
 	if err != nil {
@@ -33,7 +52,7 @@ func NewCostAnalysis(priceSheetPath string) (*CostAnalysis, error) {
 		return nil, err
 	}
 	return &CostAnalysis{
-		priceSheetPath: priceSheetPath,
+		priceSheetPath: priceSheetLocation,
 		pricing:        pricing,
 	}, nil
 }
@@ -46,4 +65,18 @@ func (c *CostAnalysis) CalculateEgress(calls []*Call) (float64, error) {
 		totalCost += cost
 	}
 	return totalCost, nil
+}
+
+func isValidUrl(toTest string) bool {
+	_, err := url.ParseRequestURI(toTest)
+	if err != nil {
+		return false
+	}
+
+	u, err := url.Parse(toTest)
+	if err != nil || u.Scheme == "" || u.Host == "" {
+		return false
+	}
+
+	return true
 }
