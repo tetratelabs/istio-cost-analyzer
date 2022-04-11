@@ -19,8 +19,8 @@ var (
 )
 
 const (
-	gcpPricingLocation = "https://raw.githubusercontent.com/tetratelabs/istio-cost-analyzer/master/pricing/gcp_pricing.json"
-	awsPricingLocation = "https://github.com/tetratelabs/istio-cost-analyzer/blob/master/pricing/aws/aws_pricing.json"
+	gcpPricingLocation = "https://raw.githubusercontent.com/tetratelabs/istio-cost-analyzer/master/pricing/gcp/gcp_pricing.json"
+	awsPricingLocation = "https://raw.githubusercontent.com/tetratelabs/istio-cost-analyzer/master/pricing/aws/aws_pricing.json"
 )
 
 var analyzeCmd = &cobra.Command{
