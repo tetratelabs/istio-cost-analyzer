@@ -48,13 +48,22 @@ spec:
 ```
 
 
-### Running
+### Installation
 
-To Build `istio-cost-analyzer` (inside the `istio-cost-analyzer` repo):
+To install the `istio-cost-analyzer` binary:
+
+```shell
+go install github.com/tetratelabs/istio-cost-analyzer@v0.02 
+```
+
+You can alternatively clone the repo (`git clone git@github.com:tetratelabs/istio-cost-analyzer.git`) and build the latest
+`istio-cost-analyzer` (inside the `istio-cost-analyzer` repo):
 
 ```
 go install
 ```
+
+### Running
 
 Run:
 
