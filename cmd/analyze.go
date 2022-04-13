@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/spf13/cobra"
-	"istio-cost-analyzer/pkg"
+	"github.com/tetratelabs/istio-cost-analyzer/pkg"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"time"
 )

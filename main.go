@@ -1,6 +1,6 @@
 package main
 
-import "istio-cost-analyzer/cmd"
+import "github.com/tetratelabs/istio-cost-analyzer/cmd"
 
 func main() {
 	cmd.Execute()
