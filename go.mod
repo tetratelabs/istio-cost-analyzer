@@ -1,4 +1,4 @@
-module istio-cost-analyzer
+module github.com/tetratelabs/istio-cost-analyzer
 
 go 1.17
 
