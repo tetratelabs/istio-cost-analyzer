@@ -57,10 +57,20 @@ func NewCostAnalysis(priceSheetLocation string) (*CostAnalysis, error) {
 	}, nil
 }
 
+// CalculateEgress calculates the total egress costs based on the pricing structure
+// in the CostAnalysis object. It stores the individual call prices in the calls object,
+// along with returning a total cost as a float64. If an entry in calls doesn't correspond to
+// the actual pricing structure, the function just skips that entry, instead of returning an error.
+// todo should we return a multierror?
 func (c *CostAnalysis) CalculateEgress(calls []*Call) (float64, error) {
 	totalCost := 0.00
 	for i, v := range calls {
-		cost := c.pricing[v.From][v.To] * (float64(v.CallSize) * math.Pow(10, -6))
+		rate, ok := c.pricing[v.From][v.To]
+		if !ok {
+			fmt.Printf("unable to find rate for link between %v and %v, skipping...\n", v.From, v.To)
+			continue
+		}
+		cost := rate * (float64(v.CallSize) * math.Pow(10, -6))
 		calls[i].CallCost = cost
 		totalCost += cost
 	}
