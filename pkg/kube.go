@@ -15,7 +15,7 @@ type KubeClient struct {
 	clientSet *kubernetes.Clientset
 }
 
-func NewDapaniKubeClient() *KubeClient {
+func NewAnalyzerKube() *KubeClient {
 	var kubeconfig *string
 	if home := homedir.HomeDir(); home != "" {
 		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")

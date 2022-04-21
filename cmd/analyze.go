@@ -28,8 +28,8 @@ var analyzeCmd = &cobra.Command{
 	Short: "List all the pod to pod links in the mesh",
 	Long:  ``,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		dapani, err := pkg.NewDapaniProm(prometheusEndpoint)
-		kubeClient := pkg.NewDapaniKubeClient()
+		analyzerProm, err := pkg.NewAnalyzerProm(prometheusEndpoint)
+		kubeClient := pkg.NewAnalyzerKube()
 		if err != nil {
 			return err
 		}
@@ -47,15 +47,15 @@ var analyzeCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		go dapani.PortForwardProm()
-		if err := dapani.WaitForProm(); err != nil {
+		go analyzerProm.PortForwardProm()
+		if err := analyzerProm.WaitForProm(); err != nil {
 			return err
 		}
 		duration, err := time.ParseDuration(queryBefore)
 		if err != nil {
 			return err
 		}
-		podCalls, err := dapani.GetPodCalls(duration)
+		podCalls, err := analyzerProm.GetPodCalls(duration)
 		if err != nil {
 			return err
 		}
@@ -74,8 +74,8 @@ var analyzeCmd = &cobra.Command{
 
 func init() {
 	rootCmd.PersistentFlags().StringVar(&cloud, "cloud", "gcp", "aws/gcp/azure are provided by default. if nothing is set, gcp is used.")
-	rootCmd.PersistentFlags().StringVar(&pricePath, "pricePath", "", "if custom egress rates are provided, dapani will use the rates in this file.")
-	rootCmd.PersistentFlags().StringVar(&queryBefore, "queryBefore", "0s", "if provided a time duration (go format), dapani will only use data from that much time ago and before.")
+	rootCmd.PersistentFlags().StringVar(&pricePath, "pricePath", "", "if custom egress rates are provided, the tool will use the rates in this file.")
+	rootCmd.PersistentFlags().StringVar(&queryBefore, "queryBefore", "0s", "if provided a time duration (go format), the tool will only use data from that much time ago and before.")
 	rootCmd.PersistentFlags().BoolVar(&details, "details", false, "if true, tool will provide a more detailed view of egress costs, including both destination and source")
 	rootCmd.AddCommand(analyzeCmd)
 }
