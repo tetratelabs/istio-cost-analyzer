@@ -1,0 +1,47 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: mutating-webhook
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mutating-webhook
+  template:
+    metadata:
+      labels:
+        app: mutating-webhook
+    spec:
+      initContainers:
+        - name: mutating-webhook-ca
+          image: mutating-webhook-ca:0.1.0
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - mountPath: /etc/webhook/certs
+              name: certs
+          env:
+            - name: MUTATE_CONFIG
+              value: mutating-webhook-configuration
+            - name: WEBHOOK_SERVICE
+              value: webhook-service
+            - name: WEBHOOK_NAMESPACE
+              value: default
+      containers:
+        - name: mutating-webhook
+          image: mutating-webhook:0.1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 443
+          volumeMounts:
+            - name: certs
+              mountPath: /etc/webhook/certs
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "250m"
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+      volumes:
+        - name: certs
+          emptyDir: {}
