@@ -59,7 +59,7 @@ var analyzeCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		localityCalls, err := kubeClient.GetLocalityCalls(podCalls)
+		localityCalls, err := kubeClient.GetLocalityCalls(podCalls, cloud)
 		if err != nil {
 			return err
 		}

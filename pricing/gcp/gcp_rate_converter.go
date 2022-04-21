@@ -34,7 +34,6 @@ func init() {
 	flag.StringVar(&outputFile, "out", "default_pricing.json", "file to output transformed data")
 	flag.StringVar(&inputFile, "in", "pricing.json", "input data")
 	flag.Parse()
-
 }
 
 func main() {

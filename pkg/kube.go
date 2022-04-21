@@ -40,9 +40,7 @@ func NewDapaniKubeClient() *KubeClient {
 	}
 }
 
-func (k *KubeClient) GetLocalityCalls(podCalls []*PodCall) ([]*Call, error) {
-	// todo collapse all pod<->pod links into service<->service links
-	// 	grouped pod to service/locality combination
+func (k *KubeClient) GetLocalityCalls(podCalls []*PodCall, cloud string) ([]*Call, error) {
 	calls := make([]*Call, 0)
 	// key is just source/destination service/locality. No call size info
 	// value is full Call
@@ -56,11 +54,11 @@ func (k *KubeClient) GetLocalityCalls(podCalls []*PodCall) ([]*Call, error) {
 		if err != nil {
 			return nil, err
 		}
-		fromLocality, err := k.getNodeLocality(fromNode)
+		fromLocality, err := k.getNodeLocality(fromNode, cloud)
 		if err != nil {
 			return nil, err
 		}
-		toLocality, err := k.getNodeLocality(toNode)
+		toLocality, err := k.getNodeLocality(toNode, cloud)
 		if err != nil {
 			return nil, err
 		}
@@ -92,11 +90,20 @@ func (k *KubeClient) getPodNode(name string) (string, error) {
 	return pod.Spec.NodeName, nil
 }
 
-func (k *KubeClient) getNodeLocality(name string) (string, error) {
+func (k *KubeClient) getNodeLocality(name, cloud string) (string, error) {
+	// if we are on AWS, we want to just get region, because availability zones
+	// are not supported yet.
+	if cloud == "aws" {
+		return k.getNodeLabel(name, "topology.kubernetes.io/region")
+	}
+	return k.getNodeLabel(name, "topology.kubernetes.io/zone")
+}
+
+func (k *KubeClient) getNodeLabel(name, label string) (string, error) {
 	node, err := k.clientSet.CoreV1().Nodes().Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
 		fmt.Printf("error in getting node %v: %v\n", name, err)
 		return "", err
 	}
-	return node.Labels["topology.kubernetes.io/zone"], nil
+	return node.Labels[label], nil
 }

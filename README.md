@@ -71,7 +71,7 @@ Run:
 istio-cost-analyzer analyze
 ```
 
-This assumes your cluster is on GCP. To change this to the two options of AWS and Azure, run as follows:
+This assumes your cluster is on GCP. To change this to the two options of AWS and GCP, run as follows:
 ```
 istio-cost-analyzer analyze --cloud aws
 ```
@@ -107,6 +107,4 @@ productpage-v1 	us-west1-b     	reviews-v2          	us-west1-b          	0.0562
 productpage-v1 	us-west1-b     	reviews-v3          	us-west1-b          	0.058500        	-     	
 reviews-v2     	us-west1-b     	ratings-v1          	us-west1-b          	0.056150        	-     	
 reviews-v3     	us-west1-b     	ratings-v1          	us-west1-b          	0.058400        	-    
-
-
 ```
