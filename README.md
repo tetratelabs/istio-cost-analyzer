@@ -53,7 +53,7 @@ spec:
 To install the `istio-cost-analyzer` binary:
 
 ```shell
-go install github.com/tetratelabs/istio-cost-analyzer@v0.02 
+go install github.com/tetratelabs/istio-cost-analyzer@latest
 ```
 
 You can alternatively clone the repo (`git clone git@github.com:tetratelabs/istio-cost-analyzer.git`) and build the latest
