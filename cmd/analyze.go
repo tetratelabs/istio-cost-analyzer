@@ -18,6 +18,8 @@ var (
 	details     bool
 )
 
+// todo these should change to tetrate-hosted s3 files, with which we can send over cluster information
+// 	to track usage patterns.
 const (
 	gcpPricingLocation = "https://raw.githubusercontent.com/tetratelabs/istio-cost-analyzer/master/pricing/gcp/gcp_pricing.json"
 	awsPricingLocation = "https://raw.githubusercontent.com/tetratelabs/istio-cost-analyzer/master/pricing/aws/aws_pricing.json"
@@ -28,8 +30,8 @@ var analyzeCmd = &cobra.Command{
 	Short: "List all the pod to pod links in the mesh",
 	Long:  ``,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		dapani, err := pkg.NewDapaniProm(prometheusEndpoint)
-		kubeClient := pkg.NewDapaniKubeClient()
+		analyzerProm, err := pkg.NewAnalyzerProm(prometheusEndpoint)
+		kubeClient := pkg.NewAnalyzerKube()
 		if err != nil {
 			return err
 		}
@@ -43,26 +45,32 @@ var analyzeCmd = &cobra.Command{
 				return errors.New("provide different cloud")
 			}
 		}
+		// initialize analyzer
 		cost, err := pkg.NewCostAnalysis(pricePath)
 		if err != nil {
 			return err
 		}
-		go dapani.PortForwardProm()
-		if err := dapani.WaitForProm(); err != nil {
+		// port-forward prometheus asynchronously and wait for it to be ready
+		go analyzerProm.PortForwardProm()
+		if err := analyzerProm.WaitForProm(); err != nil {
 			return err
 		}
 		duration, err := time.ParseDuration(queryBefore)
 		if err != nil {
 			return err
 		}
-		podCalls, err := dapani.GetPodCalls(duration)
+		// query prometheus for raw pod calls
+		podCalls, err := analyzerProm.GetPodCalls(duration)
 		if err != nil {
 			return err
 		}
+		// transform raw pod calls to locality information
 		localityCalls, err := kubeClient.GetLocalityCalls(podCalls, cloud)
 		if err != nil {
 			return err
 		}
+		//localityCalls[0].From = "us-west1-c"
+		// calculate egress given locality information
 		totalCost, err := cost.CalculateEgress(localityCalls)
 		if err != nil {
 			return err

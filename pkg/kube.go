@@ -11,11 +11,19 @@ import (
 	"path/filepath"
 )
 
+// KubeClient just wraps the kubernetes API.
+// todo should we just do:
+//  ```
+//   type KubeClient kubernetes.ClientSet
+//  ```
+// if we get no value from just wrapping?
 type KubeClient struct {
 	clientSet *kubernetes.Clientset
 }
 
-func NewDapaniKubeClient() *KubeClient {
+// NewAnalyzerKube creates a clientset using the kubeconfig found in the home directory.
+// todo make kubeconfig a settable parameter in analyzer.go
+func NewAnalyzerKube() *KubeClient {
 	var kubeconfig *string
 	if home := homedir.HomeDir(); home != "" {
 		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
@@ -40,10 +48,13 @@ func NewDapaniKubeClient() *KubeClient {
 	}
 }
 
+// GetLocalityCalls uses an array of PodCall to associate localities with these pods, getting this data
+// from the kubernetes API. We can get localities by going from pod -> node -> topology.
 func (k *KubeClient) GetLocalityCalls(podCalls []*PodCall, cloud string) ([]*Call, error) {
 	calls := make([]*Call, 0)
-	// key is just source/destination service/locality. No call size info
-	// value is full Call
+	// serviceCallMap's keys are just workload/locality links, without any call size information,
+	// while the value is the full, aggregated call value for that link. We do this because there may
+	// exist multiple pods that cause the same workload/locality link, and we don't want them to duplicate.
 	serviceCallMap := make(map[Call]*Call)
 	for i := 0; i < len(podCalls); i++ {
 		fromNode, err := k.getPodNode(podCalls[i].FromPod)
@@ -68,6 +79,7 @@ func (k *KubeClient) GetLocalityCalls(podCalls []*PodCall, cloud string) ([]*Cal
 			ToWorkload:   podCalls[i].ToWorkload,
 			To:           toLocality,
 		}
+		// either create a new entry, or add to an existing one.
 		if _, ok := serviceCallMap[serviceLocalityKey]; !ok {
 			serviceCallMap[serviceLocalityKey] = &serviceLocalityKey
 			serviceLocalityKey.CallSize = podCalls[i].CallSize
@@ -81,6 +93,7 @@ func (k *KubeClient) GetLocalityCalls(podCalls []*PodCall, cloud string) ([]*Cal
 	return calls, nil
 }
 
+// getPodNode gets the node associated with a given pod name in the default namespece.
 func (k *KubeClient) getPodNode(name string) (string, error) {
 	pod, err := k.clientSet.CoreV1().Pods("default").Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
@@ -90,6 +103,7 @@ func (k *KubeClient) getPodNode(name string) (string, error) {
 	return pod.Spec.NodeName, nil
 }
 
+// getNodeLocality gets the locality given by topology.kubernetes.io.
 func (k *KubeClient) getNodeLocality(name, cloud string) (string, error) {
 	// if we are on AWS, we want to just get region, because availability zones
 	// are not supported yet.

@@ -11,13 +11,17 @@ import (
 	"time"
 )
 
-type DapaniProm struct {
+// CostAnalyzerProm holds the prometheus routines necessary to collect
+// service<->service traffic data.
+type CostAnalyzerProm struct {
 	promEndpoint string
 	errChan      chan error
 	client       api.Client
 }
 
-func NewDapaniProm(promEndpoint string) (*DapaniProm, error) {
+// NewAnalyzerProm creates a prometheus client given the endpoint,
+// and errors out if the endpoint is invalid.
+func NewAnalyzerProm(promEndpoint string) (*CostAnalyzerProm, error) {
 	client, err := api.NewClient(api.Config{
 		Address: promEndpoint,
 	})
@@ -25,14 +29,17 @@ func NewDapaniProm(promEndpoint string) (*DapaniProm, error) {
 		fmt.Printf("cannot initialize prom lib: %v", err)
 		return nil, err
 	}
-	return &DapaniProm{
+	return &CostAnalyzerProm{
 		promEndpoint: promEndpoint,
 		errChan:      make(chan error),
 		client:       client,
 	}, nil
 }
 
-func (d *DapaniProm) PortForwardProm() {
+// PortForwardProm will execute a kubectl port-forward command, forwarding the inbuild prometheus
+// deployment to port 9090 on localhost. This is executed asynchronously, and if there is an error,
+// it is sent into d.errChan.
+func (d *CostAnalyzerProm) PortForwardProm() {
 	cmd := exec.Command("kubectl", "-n", "istio-system", "port-forward", "deployment/prometheus", "9990:9090")
 	o, err := cmd.CombinedOutput()
 	if err != nil {
@@ -42,7 +49,9 @@ func (d *DapaniProm) PortForwardProm() {
 	}
 }
 
-func (d *DapaniProm) WaitForProm() error {
+// WaitForProm just pings the prometheus endpoint until it gets a code within [200, 300).
+// It selects for that event and an error coming in from d.errChan.
+func (d *CostAnalyzerProm) WaitForProm() error {
 	ticker := time.NewTicker(500 * time.Millisecond)
 	fmt.Println("Waiting for prometheus to be ready...")
 	for {
@@ -59,7 +68,10 @@ func (d *DapaniProm) WaitForProm() error {
 		}
 	}
 }
-func (d *DapaniProm) GetPodCalls(since time.Duration) ([]*PodCall, error) {
+
+// GetPodCalls queries the prometheus API for istio_request_bytes_sum, given a time range.
+// todo take an actual timerange, and not the hacky "since" parameter.
+func (d *CostAnalyzerProm) GetPodCalls(since time.Duration) ([]*PodCall, error) {
 	promApi := v1.NewAPI(d.client)
 	calls := make([]*PodCall, 0)
 	query := "istio_request_bytes_sum{destination_pod!=\"\", destination_pod!=\"unknown\"}"

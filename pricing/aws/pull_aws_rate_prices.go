@@ -21,6 +21,8 @@ This doesn't work for all the regions (for some reason), but it works
 for the major ones, which is good enough for now (?)
 
 Don't use this in prod (please).
+
+Not even going to bother documenting.
 */
 
 var out string

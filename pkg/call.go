@@ -49,7 +49,6 @@ func PrintCostTable(calls []*Call, total float64, details bool) {
 }
 
 func printMinifiedCostTable(calls []*Call) {
-	// collapse into set by source
 	// todo should we group by source & locality or just source
 	// 	foo in us-west1-b might be treated diff from foo in us-west1-a
 	//  right now we group by just source, so all localities are grouped in the same row
@@ -108,6 +107,7 @@ func kubernetesify(table *tablewriter.Table) {
 	table.SetBorder(false)
 }
 
+// PodCall represents raw pod data, not containing locality or cost information.
 type PodCall struct {
 	FromPod      string
 	FromWorkload string
