@@ -16,6 +16,7 @@ var (
 	pricePath   string
 	queryBefore string
 	details     bool
+	namespace   string
 )
 
 // todo these should change to tetrate-hosted s3 files, with which we can send over cluster information
@@ -85,5 +86,6 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&pricePath, "pricePath", "", "if custom egress rates are provided, dapani will use the rates in this file.")
 	rootCmd.PersistentFlags().StringVar(&queryBefore, "queryBefore", "0s", "if provided a time duration (go format), dapani will only use data from that much time ago and before.")
 	rootCmd.PersistentFlags().BoolVar(&details, "details", false, "if true, tool will provide a more detailed view of egress costs, including both destination and source")
+	rootCmd.PersistentFlags().StringVar(&namespace, "namespace", "default", "analyze the cost of a certain namespace")
 	rootCmd.AddCommand(analyzeCmd)
 }

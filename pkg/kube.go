@@ -95,7 +95,7 @@ func (k *KubeClient) GetLocalityCalls(podCalls []*PodCall, cloud string) ([]*Cal
 
 // getPodNode gets the node associated with a given pod name in the default namespece.
 func (k *KubeClient) getPodNode(name string) (string, error) {
-	pod, err := k.clientSet.CoreV1().Pods("default").Get(context.TODO(), name, metav1.GetOptions{})
+	pod, err := k.clientSet.CoreV1().Pods("").Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
 		fmt.Printf("error in getting pod %v: %v\n", name, err)
 		return "", err
