@@ -109,9 +109,11 @@ func kubernetesify(table *tablewriter.Table) {
 
 // PodCall represents raw pod data, not containing locality or cost information.
 type PodCall struct {
-	FromPod      string
-	FromWorkload string
-	ToPod        string
-	ToWorkload   string
-	CallSize     uint64
+	FromPod       string
+	FromNamespace string
+	FromWorkload  string
+	ToPod         string
+	ToWorkload    string
+	ToNamespace   string
+	CallSize      uint64
 }

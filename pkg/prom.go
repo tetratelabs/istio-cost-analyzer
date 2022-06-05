@@ -39,8 +39,8 @@ func NewAnalyzerProm(promEndpoint string) (*CostAnalyzerProm, error) {
 // PortForwardProm will execute a kubectl port-forward command, forwarding the inbuild prometheus
 // deployment to port 9090 on localhost. This is executed asynchronously, and if there is an error,
 // it is sent into d.errChan.
-func (d *CostAnalyzerProm) PortForwardProm() {
-	cmd := exec.Command("kubectl", "-n", "istio-system", "port-forward", "deployment/prometheus", "9990:9090")
+func (d *CostAnalyzerProm) PortForwardProm(promNamespace string) {
+	cmd := exec.Command("kubectl", "-n", promNamespace, "port-forward", "deployment/prometheus", "9990:9090")
 	o, err := cmd.CombinedOutput()
 	if err != nil {
 		fmt.Printf("cannot port-forward to prometheus: %v %v", err, string(o))
@@ -93,11 +93,13 @@ func (d *CostAnalyzerProm) GetPodCalls(since time.Duration) ([]*PodCall, error) 
 	v := result.(model.Vector)
 	for i := 0; i < len(v); i++ {
 		calls = append(calls, &PodCall{
-			ToPod:        string(v[i].Metric["destination_pod"]),
-			FromPod:      string(v[i].Metric["kubernetes_pod_name"]),
-			ToWorkload:   string(v[i].Metric["destination_workload"]),
-			FromWorkload: string(v[i].Metric["source_workload"]),
-			CallSize:     uint64(v[i].Value),
+			ToPod:         string(v[i].Metric["destination_pod"]),
+			FromPod:       string(v[i].Metric["kubernetes_pod_name"]),
+			FromNamespace: string(v[i].Metric["source_workload_namespace"]),
+			ToWorkload:    string(v[i].Metric["destination_workload"]),
+			FromWorkload:  string(v[i].Metric["source_workload"]),
+			ToNamespace:   string(v[i].Metric["destination_workload_namespace"]),
+			CallSize:      uint64(v[i].Value),
 		})
 	}
 	return calls, nil

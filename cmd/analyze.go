@@ -52,7 +52,7 @@ var analyzeCmd = &cobra.Command{
 			return err
 		}
 		// port-forward prometheus asynchronously and wait for it to be ready
-		go analyzerProm.PortForwardProm()
+		go analyzerProm.PortForwardProm(namespace)
 		if err := analyzerProm.WaitForProm(); err != nil {
 			return err
 		}
@@ -86,6 +86,6 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&pricePath, "pricePath", "", "if custom egress rates are provided, dapani will use the rates in this file.")
 	rootCmd.PersistentFlags().StringVar(&queryBefore, "queryBefore", "0s", "if provided a time duration (go format), dapani will only use data from that much time ago and before.")
 	rootCmd.PersistentFlags().BoolVar(&details, "details", false, "if true, tool will provide a more detailed view of egress costs, including both destination and source")
-	rootCmd.PersistentFlags().StringVar(&namespace, "namespace", "default", "analyze the cost of a certain namespace")
+	rootCmd.PersistentFlags().StringVar(&namespace, "promNamespace", "istio-system", "namespace that the prometheus pod lives in")
 	rootCmd.AddCommand(analyzeCmd)
 }

@@ -57,11 +57,11 @@ func (k *KubeClient) GetLocalityCalls(podCalls []*PodCall, cloud string) ([]*Cal
 	// exist multiple pods that cause the same workload/locality link, and we don't want them to duplicate.
 	serviceCallMap := make(map[Call]*Call)
 	for i := 0; i < len(podCalls); i++ {
-		fromNode, err := k.getPodNode(podCalls[i].FromPod)
+		fromNode, err := k.getPodNode(podCalls[i].FromPod, podCalls[i].FromNamespace)
 		if err != nil {
 			return nil, err
 		}
-		toNode, err := k.getPodNode(podCalls[i].ToPod)
+		toNode, err := k.getPodNode(podCalls[i].ToPod, podCalls[i].ToNamespace)
 		if err != nil {
 			return nil, err
 		}
@@ -94,8 +94,8 @@ func (k *KubeClient) GetLocalityCalls(podCalls []*PodCall, cloud string) ([]*Cal
 }
 
 // getPodNode gets the node associated with a given pod name in the default namespece.
-func (k *KubeClient) getPodNode(name string) (string, error) {
-	pod, err := k.clientSet.CoreV1().Pods("").Get(context.TODO(), name, metav1.GetOptions{})
+func (k *KubeClient) getPodNode(name, namespace string) (string, error) {
+	pod, err := k.clientSet.CoreV1().Pods(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
 		fmt.Printf("error in getting pod %v: %v\n", name, err)
 		return "", err
