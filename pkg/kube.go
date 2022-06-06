@@ -89,7 +89,7 @@ func (k *KubeClient) GetLocalityCalls(podCalls []*PodCall, cloud string) ([]*Cal
 		}
 		if i%10 == 0 {
 			for k, v := range serviceCallMap {
-				fmt.Printf("%v(%v) -> %v(%v): %v  |  link %v / %v\n", k.From, k.FromWorkload, k.To, k.ToWorkload, v.CallSize, i, len(serviceCallMap))
+				fmt.Printf("%v(%v) -> %v(%v): %v  |  link %v / %v\n", k.From, k.FromWorkload, k.To, k.ToWorkload, v.CallSize, i, len(podCalls))
 			}
 		}
 	}
