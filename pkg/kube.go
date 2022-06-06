@@ -53,7 +53,7 @@ func NewAnalyzerKube() *KubeClient {
 func (k *KubeClient) GetLocalityCalls(podCalls []*PodCall, cloud string) ([]*Call, error) {
 	calls := make([]*Call, 0)
 	// serviceCallMap's keys are just workload/locality links, without any call size information,
-	// while the value is the full, aggregated call value for that link. We do this because there may
+	// while the map value is the full, aggregated call value for that link. We do this because there may
 	// exist multiple pods that cause the same workload/locality link, and we don't want them to duplicate.
 	serviceCallMap := make(map[Call]*Call)
 	for i := 0; i < len(podCalls); i++ {
@@ -86,6 +86,11 @@ func (k *KubeClient) GetLocalityCalls(podCalls []*PodCall, cloud string) ([]*Cal
 			serviceLocalityKey.CallSize = podCalls[i].CallSize
 		} else {
 			serviceCallMap[serviceLocalityKey].CallSize += podCalls[i].CallSize
+		}
+		if i%10 == 0 {
+			for k, v := range serviceCallMap {
+				fmt.Printf("%v -> %v: %v\n", k.From, k.To, v.CallSize)
+			}
 		}
 	}
 	for _, v := range serviceCallMap {

@@ -70,7 +70,7 @@ var analyzeCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		//localityCalls[0].From = "us-west1-c"
+		localityCalls[0].From = "us-west1-c"
 		// calculate egress given locality information
 		totalCost, err := cost.CalculateEgress(localityCalls)
 		if err != nil {
