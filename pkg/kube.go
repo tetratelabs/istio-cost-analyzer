@@ -4,6 +4,8 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	v12 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -126,4 +128,12 @@ func (k *KubeClient) getNodeLabel(name, label string) (string, error) {
 		return "", err
 	}
 	return node.Labels[label], nil
+}
+
+func (k *KubeClient) CreateService(service *v1.Service) (*v1.Service, error) {
+	return k.clientSet.CoreV1().Services("default").Create(context.TODO(), service, metav1.CreateOptions{})
+}
+
+func (k *KubeClient) CreateDeployment(deployment *v12.Deployment) (*v12.Deployment, error) {
+	return k.clientSet.AppsV1().Deployments("default").Create(context.TODO(), deployment, metav1.CreateOptions{})
 }

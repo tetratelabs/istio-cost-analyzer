@@ -1,0 +1,12 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cost-analyzer-role-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cost-analyzer-service-role
+subjects:
+  - kind: ServiceAccount
+    name: cost-analyzer-sa
+    namespace: default

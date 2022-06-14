@@ -1,0 +1,15 @@
+FROM golang:1.17-alpine as build
+
+WORKDIR /usr/src/mutating-webhook
+
+COPY . .
+
+RUN go build -o ./bin/mutating-webhook ./cmd/mutating-webhook
+
+FROM alpine
+
+WORKDIR /opt
+
+COPY --from=build /usr/src/mutating-webhook/bin/mutating-webhook .
+
+CMD ["./mutating-webhook", "--tls-cert", "/etc/webhook/certs/tls.crt", "--tls-key", "/etc/webhook/certs/tls.key"]

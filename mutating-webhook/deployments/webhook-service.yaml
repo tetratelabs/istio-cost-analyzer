@@ -1,0 +1,11 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: cost-analyzer-mutating-webhook
+spec:
+  selector:
+    app: cost-analyzer-mutating-webhook
+  ports:
+    - port: 443
+      protocol: TCP
+      targetPort: 443
