@@ -44,6 +44,8 @@ spec:
       version: v1
   template:
     metadata:
+      annotations:
+        foo.bar: xyz
       labels:
         app: details
         version: v1

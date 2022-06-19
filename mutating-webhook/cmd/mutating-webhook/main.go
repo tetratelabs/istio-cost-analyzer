@@ -74,14 +74,15 @@ func mutatePod(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed to read request body", http.StatusInternalServerError)
 		return
 	}
+	logger.Printf("got for %v", admissionReviewRequest.Request.Resource.Resource)
 
 	// Do server-side validation that we are only dealing with a pod resource. This
 	// should also be part of the MutatingWebhookConfiguration in the cluster, but
 	// we should verify here before continuing.
-	podResource := metav1.GroupVersionResource{Group: "", Version: "v1", Resource: "pods"}
-	deploymentResource := metav1.GroupVersionResource{Group: "", Version: "v1", Resource: "deployments"}
+	//podResource := metav1.GroupVersionResource{Group: "", Version: "v1", Resource: "pods"}
+	//deploymentResource := metav1.GroupVersionResource{Group: "", Version: "v1", Resource: "deployments"}
 	resourceType := admissionReviewRequest.Request.Resource
-	if resourceType != podResource || resourceType != deploymentResource {
+	if resourceType.Resource != "deployments" && resourceType.Resource != "pods" {
 		logger.Printf("unexpected resource of type %q, expected a pod/deployment", admissionReviewRequest.Request.Resource.Resource)
 		http.Error(w, "unexpected resource", http.StatusBadRequest)
 		return
@@ -94,7 +95,7 @@ func mutatePod(w http.ResponseWriter, r *http.Request) {
 		Allowed: true,
 	}
 	var patch string
-	if resourceType == podResource {
+	if resourceType.Resource == "pods" {
 		pod := corev1.Pod{}
 		if _, _, err := deserializer.Decode(raw, nil, &pod); err != nil {
 			logger.Printf("decoding raw pod: %v", err)
@@ -106,14 +107,21 @@ func mutatePod(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			logger.Printf("unable to get locality from node info for pod %v, skipping patching locality\n", pod.Name)
 		}
-		patch = fmt.Sprintf(`[{"op":"add","path":"/metadata/labels/locality","value": "%v"}]`, podLocality)
+		log.Printf("editing pod %v for locality %v", pod.Name, podLocality)
+		patch = fmt.Sprintf(`[
+{"op":"add",
+"path":"/metadata/labels/locality","value": "%v"}
+]`, podLocality)
 	} else {
 		deployment := v1.Deployment{}
 		if _, _, err := deserializer.Decode(raw, nil, &deployment); err != nil {
 			logger.Printf("decoding raw deployment: %v", err)
 			http.Error(w, "failed to decode deployment", http.StatusInternalServerError)
 		}
-		patch = `[{"op":"add","path":"/spec/template/metadata/annotations/sidecar.istio.io/extraStatTags","value": "destination_pod"}]`
+		log.Printf("editing deployment %v, adding destination_pod...", deployment.Name)
+		patch = `[{
+"op":"add",
+"path":"/spec/template/metadata/annotations/sidecar.istio.io~1extraStatTags","value": "destination_pod"}]`
 	}
 
 	// Construct response
@@ -168,6 +176,8 @@ func getNodeLabel(name, label string) (string, error) {
 
 func runWebhookServer(certFile, keyFile string, port int) error {
 	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+	//cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+	fmt.Println(cert.PrivateKey)
 	if err != nil {
 		return err
 	}
@@ -182,5 +192,5 @@ func runWebhookServer(certFile, keyFile string, port int) error {
 		ErrorLog: logger,
 	}
 
-	return server.ListenAndServeTLS("", "")
+	return server.ListenAndServeTLS(certFile, keyFile)
 }
