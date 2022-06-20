@@ -1,0 +1,48 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: cost-analyzer-mutating-webhook
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cost-analyzer-mutating-webhook
+  template:
+    metadata:
+      labels:
+        app: cost-analyzer-mutating-webhook
+    spec:
+      initContainers:
+        - name: cost-analyzer-mutating-webhook-ca
+          image: adiprerepa/cost-analyzer-mutating-webhook-ca:latest
+          imagePullPolicy: Always
+          volumeMounts:
+            - mountPath: /etc/webhook/certs
+              name: certs
+          env:
+            - name: MUTATE_CONFIG
+              value: cost-analyzer-mutating-webhook-configuration
+            - name: WEBHOOK_SERVICE
+              value: cost-analyzer-mutating-webhook
+            - name: WEBHOOK_NAMESPACE
+              value: default
+      containers:
+        - name: cost-analyzer-mutating-webhook
+          image: adiprerepa/cost-analyzer-mutating-webhook:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 443
+          volumeMounts:
+            - name: certs
+              mountPath: /etc/webhook/certs
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "250m"
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+      volumes:
+        - name: certs
+          emptyDir: {}
+      serviceAccountName: cost-analyzer-sa
