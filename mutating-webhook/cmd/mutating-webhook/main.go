@@ -8,8 +8,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	v1 "k8s.io/api/apps/v1"
+	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/cache"
 	"log"
 	"net/http"
 	"os"
@@ -26,11 +28,15 @@ var (
 	logger    = log.New(os.Stdout, "", log.LstdFlags)
 	clientset *kubernetes.Clientset
 	cloud     = os.Getenv("CLOUD")
+	namespace = os.Getenv("NAMESPACE")
 )
 
 func main() {
 	if cloud == "" {
 		cloud = "gcp"
+	}
+	if namespace == "" {
+		namespace = "default"
 	}
 	tlsCert := flag.String("tls-cert", "", "Certificate for TLS")
 	tlsKey := flag.String("tls-key", "", "Private key file for TLS")
@@ -46,10 +52,44 @@ func main() {
 	if err != nil {
 		panic(err.Error())
 	}
+	stopCh := make(chan struct{})
+	watchAndLabelPods(stopCh)
 
 	if err := runWebhookServer(*tlsCert, *tlsKey, *port); err != nil {
 		log.Fatal(err)
 	}
+}
+
+// watchAndLabelPod watches for pod creation and labels the pod with the node locality.
+func watchAndLabelPods(stopCh <-chan struct{}) {
+	factory := informers.NewSharedInformerFactory(clientset, 0)
+	// Get pods from informer
+	informer := factory.Core().V1().Pods().Informer()
+	//defer runtime.HandleCrash()
+	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: func(obj interface{}) {
+			pod := obj.(*corev1.Pod)
+			if pod.Namespace != namespace {
+				return
+			}
+			// Get the node locality
+			locality, err := getNodeLocality(pod.Spec.NodeName, cloud)
+			if err != nil {
+				log.Printf("error in getting node locality: %v\n", err)
+				return
+			}
+			// Label the pod with the node locality
+			pod.ObjectMeta.Labels["locality"] = locality
+			// Update the pod
+			_, err = clientset.CoreV1().Pods(pod.Namespace).Update(context.TODO(), pod, metav1.UpdateOptions{})
+			if err != nil {
+				log.Printf("error in updating pod: %v\n", err)
+				return
+			}
+			log.Printf("Pod %v updated\n", pod.Name)
+		},
+	})
+	go informer.Run(stopCh)
 }
 
 var deserializer = codecs.UniversalDeserializer()
@@ -95,6 +135,7 @@ func mutatePod(w http.ResponseWriter, r *http.Request) {
 		Allowed: true,
 	}
 	var patch string
+	// todo this should probably be deleted at some point
 	if resourceType.Resource == "pods" {
 		pod := corev1.Pod{}
 		if _, _, err := deserializer.Decode(raw, nil, &pod); err != nil {
@@ -113,15 +154,22 @@ func mutatePod(w http.ResponseWriter, r *http.Request) {
 "path":"/metadata/labels/locality","value": "%v"}
 ]`, podLocality)
 	} else {
+		// handle deployments
 		deployment := v1.Deployment{}
 		if _, _, err := deserializer.Decode(raw, nil, &deployment); err != nil {
 			logger.Printf("decoding raw deployment: %v", err)
 			http.Error(w, "failed to decode deployment", http.StatusInternalServerError)
 		}
 		log.Printf("editing deployment %v, adding destination_pod...", deployment.Name)
-		patch = `[{
-"op":"add",
-"path":"/spec/template/metadata/annotations/sidecar.istio.io~1extraStatTags","value": "destination_pod"}]`
+		// we need to add the metadata/annotations key if it doesn't exist.
+		annotationPatch := ""
+		if len(deployment.Spec.Template.Annotations) == 0 {
+			annotationPatch = `{"op":"add","path":"/spec/template/metadata/annotations","value":{}},`
+		}
+		log.Printf("annotationPatch: %v", annotationPatch)
+		patch = fmt.Sprintf(`[%v
+{"op":"add",
+"path":"/spec/template/metadata/annotations/sidecar.istio.io~1extraStatTags","value": "destination_pod"}]`, annotationPatch)
 	}
 
 	// Construct response
@@ -165,6 +213,7 @@ func getNodeLocality(name, cloud string) (string, error) {
 	return getNodeLabel(name, "topology.kubernetes.io/zone")
 }
 
+// getNodeLabel returns the value of the label on the node with the given name.
 func getNodeLabel(name, label string) (string, error) {
 	node, err := clientset.CoreV1().Nodes().Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
@@ -176,8 +225,6 @@ func getNodeLabel(name, label string) (string, error) {
 
 func runWebhookServer(certFile, keyFile string, port int) error {
 	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
-	//cert, err := tls.LoadX509KeyPair(certFile, keyFile)
-	fmt.Println(cert.PrivateKey)
 	if err != nil {
 		return err
 	}

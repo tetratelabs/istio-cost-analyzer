@@ -92,7 +92,7 @@ var webhookSetupCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		kubeClient := pkg.NewAnalyzerKube()
 		var err error
-		webhookDeployment := `
+		webhookDeployment := fmt.Sprintf(`
 kind: Deployment
 apiVersion: apps/v1
 metadata:
@@ -125,6 +125,11 @@ spec:
         - name: cost-analyzer-mutating-webhook
           image: adiprerepa/cost-analyzer-mutating-webhook:latest
           imagePullPolicy: Always
+	      env:
+			- name: CLOUD
+			  value: %v
+			- name: NAMESPACE
+			  value: %v
           ports:
             - containerPort: 443
           volumeMounts:
@@ -141,7 +146,7 @@ spec:
         - name: certs
           emptyDir: {}
       serviceAccountName: cost-analyzer-sa
-`
+`, cloud, namespace)
 		webhookService := `
 kind: Service
 apiVersion: v1

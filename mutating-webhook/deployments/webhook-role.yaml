@@ -3,6 +3,6 @@ kind: ClusterRole
 metadata:
   name: cost-analyzer-service-role
 rules:
-  - apiGroups: [ "admissionregistration.k8s.io" ]
-    resources: [ "mutatingwebhookconfigurations" ]
-    verbs: [ "get", "create", "patch" ]
+  - apiGroups: [ "", "admissionregistration.k8s.io" ]
+    resources: [ "mutatingwebhookconfigurations", "pods", "nodes" ]
+    verbs: [ "get", "create", "patch", "list", "update" ]
