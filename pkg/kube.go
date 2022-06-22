@@ -6,11 +6,13 @@ import (
 	"fmt"
 	v12 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
+	v13 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
 	"path/filepath"
+	"strings"
 )
 
 // KubeClient just wraps the kubernetes API.
@@ -130,10 +132,44 @@ func (k *KubeClient) getNodeLabel(name, label string) (string, error) {
 	return node.Labels[label], nil
 }
 
-func (k *KubeClient) CreateService(service *v1.Service) (*v1.Service, error) {
-	return k.clientSet.CoreV1().Services("default").Create(context.TODO(), service, metav1.CreateOptions{})
+// CreateService creates a service in the given namespace. Returns the service, the error, and
+// a boolean representing whether or not the service already exists.
+func (k *KubeClient) CreateService(service *v1.Service, ns string) (*v1.Service, error, bool) {
+	svc, err := k.clientSet.CoreV1().Services(ns).Create(context.TODO(), service, metav1.CreateOptions{})
+	if err != nil && strings.Contains(err.Error(), "already exists") {
+		return service, nil, true
+	}
+	return svc, err, false
 }
 
-func (k *KubeClient) CreateDeployment(deployment *v12.Deployment) (*v12.Deployment, error) {
-	return k.clientSet.AppsV1().Deployments("default").Create(context.TODO(), deployment, metav1.CreateOptions{})
+func (k *KubeClient) CreateDeployment(deployment *v12.Deployment, ns string) (*v12.Deployment, error, bool) {
+	dep, err := k.clientSet.AppsV1().Deployments(ns).Create(context.TODO(), deployment, metav1.CreateOptions{})
+	if err != nil && strings.Contains(err.Error(), "already exists") {
+		return deployment, nil, true
+	}
+	return dep, err, false
+}
+
+func (k *KubeClient) CreateServiceAccount(serviceAccount *v1.ServiceAccount, ns string) (*v1.ServiceAccount, error, bool) {
+	sa, err := k.clientSet.CoreV1().ServiceAccounts(ns).Create(context.TODO(), serviceAccount, metav1.CreateOptions{})
+	if err != nil && strings.Contains(err.Error(), "already exists") {
+		return serviceAccount, nil, true
+	}
+	return sa, err, false
+}
+
+func (k *KubeClient) CreateClusterRoleBinding(clusterRoleBinding *v13.ClusterRoleBinding) (*v13.ClusterRoleBinding, error, bool) {
+	crb, err := k.clientSet.RbacV1().ClusterRoleBindings().Create(context.TODO(), clusterRoleBinding, metav1.CreateOptions{})
+	if err != nil && strings.Contains(err.Error(), "already exists") {
+		return clusterRoleBinding, nil, true
+	}
+	return crb, err, false
+}
+
+func (k *KubeClient) CreateClusterRole(clusterRole *v13.ClusterRole) (*v13.ClusterRole, error, bool) {
+	cr, err := k.clientSet.RbacV1().ClusterRoles().Create(context.TODO(), clusterRole, metav1.CreateOptions{})
+	if err != nil && strings.Contains(err.Error(), "already exists") {
+		return clusterRole, nil, true
+	}
+	return cr, err, false
 }
