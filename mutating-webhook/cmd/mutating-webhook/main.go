@@ -32,6 +32,7 @@ var (
 )
 
 func main() {
+	// assume defaults
 	if cloud == "" {
 		cloud = "gcp"
 	}
@@ -53,11 +54,38 @@ func main() {
 		panic(err.Error())
 	}
 	stopCh := make(chan struct{})
+	// concurrently watch for pod creation and label the pod with the node locality
 	watchAndLabelPods(stopCh)
-
-	if err := runWebhookServer(*tlsCert, *tlsKey, *port); err != nil {
+	// annotate existing deployments with stats tags
+	if err = annotateExistingDeployments(); err != nil {
 		log.Fatal(err)
 	}
+
+	if err = runWebhookServer(*tlsCert, *tlsKey, *port); err != nil {
+		log.Fatal(err)
+	}
+}
+
+// annotateExistingDeployments annotates existing deployments with stats tags.
+func annotateExistingDeployments() error {
+	depl, err := clientset.AppsV1().Deployments(namespace).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+	for _, d := range depl.Items {
+		if d.Spec.Template.Annotations == nil {
+			d.Spec.Template.Annotations = make(map[string]string)
+		}
+		if v, ok := d.Spec.Template.Annotations["sidecar.istio.io/extraStatTags"]; ok && v == "destination_locality,source_locality" {
+			continue
+		}
+		d.Spec.Template.Annotations["sidecar.istio.io/extraStatTags"] = "destination_locality,source_locality"
+		_, err = clientset.AppsV1().Deployments(namespace).Update(context.TODO(), &d, metav1.UpdateOptions{})
+		if err != nil {
+			logger.Printf("error in updating deployment, skipping...: %v\n", err)
+		}
+	}
+	return nil
 }
 
 // watchAndLabelPod watches for pod creation and labels the pod with the node locality.
@@ -169,7 +197,7 @@ func mutatePod(w http.ResponseWriter, r *http.Request) {
 		log.Printf("annotationPatch: %v", annotationPatch)
 		patch = fmt.Sprintf(`[%v
 {"op":"add",
-"path":"/spec/template/metadata/annotations/sidecar.istio.io~1extraStatTags","value": "destination_pod"}]`, annotationPatch)
+"path":"/spec/template/metadata/annotations/sidecar.istio.io~1extraStatTags","value": "destination_locality,source_locality"}]`, annotationPatch)
 	}
 
 	// Construct response

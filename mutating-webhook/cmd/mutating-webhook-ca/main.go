@@ -13,6 +13,7 @@ import (
 	"math/big"
 	"os"
 	"path"
+	"strings"
 	"time"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -87,7 +88,9 @@ func main() {
 	}
 
 	if _, err := kubeClient.AdmissionregistrationV1().MutatingWebhookConfigurations().Create(context.Background(), mutateconfig, metav1.CreateOptions{}); err != nil {
-		panic(err)
+		if !strings.Contains(err.Error(), "already exists") {
+			panic(err)
+		}
 	}
 }
 

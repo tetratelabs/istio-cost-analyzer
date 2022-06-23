@@ -7,18 +7,24 @@ data, and uses publicly-available cloud egress rates to estimate the overall egr
 
 To use this on your kubernetes cluster, make sure you have a kubeconfig in your home directory, and make sure Istio is installed on your cluster, with the prometheus addon enabled.
 
-### Creating `destination_pod`
+### Creating `destination_locality` & `source_locality` labels
 
-First, you must create the `destination_pod` metric for the cost tool to read from.
+First, you must create the `destination_locality` & `source_locality` labels for the cost tool to read from.
 
-Add the following to all of your deployments:
+You can either run the following command and have a webhook handle everything for you:
+
+```
+istio-cost-analyzer setupWebhook
+```
+
+OR Add the following to all of your deployments:
 
 ```yaml
 spec:
   template:
     metadata:
       annotations:
-        sidecar.istio.io/extraStatTags: destination_pod
+        sidecar.istio.io/extraStatTags: destination_locality,source_locality
 ```
 
 Add the following to your Istio Operator:
@@ -34,17 +40,20 @@ spec:
               metrics:
                 - name: request_bytes
                   dimensions:
-                    destination_pod: upstream_peer.name
+                    destination_locality: upstream_peer.labels['locality'].value
+                    source_locality: downstream_peer.labels['locality'].value
             outboundSidecar:
               metrics:
                 - name: request_bytes
                   dimensions:
-                    destination_pod: upstream_peer.name
+                    destination_locality: upstream_peer.labels['locality'].value
+                    source_locality: downstream_peer.labels['locality'].value
             gateway:
               metrics:
                 - name: request_bytes
                   dimensions:
-                    destination_pod: upstream_peer.name
+                    destination_locality: upstream_peer.labels['locality'].value
+                    source_locality: downstream_peer.labels['locality'].value
 ```
 
 

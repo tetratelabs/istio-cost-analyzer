@@ -40,8 +40,8 @@ var costAnalyzerClusterRole = &v13.ClusterRole{
 	},
 	Rules: []v13.PolicyRule{
 		{
-			APIGroups: []string{"", "admissionregistration.k8s.io"},
-			Resources: []string{"mutatingwebhookconfigurations", "pods", "nodes"},
+			APIGroups: []string{"", "admissionregistration.k8s.io", "apps"},
+			Resources: []string{"mutatingwebhookconfigurations", "pods", "nodes", "deployments"},
 			Verbs:     []string{"get", "create", "patch", "list", "update"},
 		},
 	},
@@ -72,7 +72,7 @@ spec:
       initContainers:
         - name: cost-analyzer-mutating-webhook-ca
           image: adiprerepa/cost-analyzer-mutating-webhook-ca:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           volumeMounts:
             - mountPath: /etc/webhook/certs
               name: certs
@@ -86,7 +86,7 @@ spec:
       containers:
         - name: cost-analyzer-mutating-webhook
           image: adiprerepa/cost-analyzer-mutating-webhook:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 443
           volumeMounts:
