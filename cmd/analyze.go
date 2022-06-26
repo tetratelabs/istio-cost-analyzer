@@ -62,12 +62,12 @@ var analyzeCmd = &cobra.Command{
 			return err
 		}
 		// query prometheus for raw pod calls
-		podCalls, err := analyzerProm.GetPodCalls(duration)
+		localityCalls, err := analyzerProm.GetCalls(duration)
 		if err != nil {
 			return err
 		}
 		// transform raw pod calls to locality information
-		localityCalls, err := kubeClient.GetLocalityCalls(podCalls, cloud)
+		localityCalls, err = kubeClient.TransformLocalityCalls(localityCalls)
 		if err != nil {
 			return err
 		}

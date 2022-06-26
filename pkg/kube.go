@@ -52,48 +52,33 @@ func NewAnalyzerKube() *KubeClient {
 	}
 }
 
-// GetLocalityCalls uses an array of PodCall to associate localities with these pods, getting this data
-// from the kubernetes API. We can get localities by going from pod -> node -> topology.
-func (k *KubeClient) GetLocalityCalls(podCalls []*PodCall, cloud string) ([]*Call, error) {
+// TransformLocalityCalls takes a raw list of type Call and collapses the data
+// into a per-link basis (there might be multiple metrics for locality a->b)
+// todo maybe do this directly in prom.go and make it O(n) instead of O(2n)
+// sort of legacy?
+func (k *KubeClient) TransformLocalityCalls(rawCalls []*Call) ([]*Call, error) {
 	calls := make([]*Call, 0)
 	// serviceCallMap's keys are just workload/locality links, without any call size information,
 	// while the map value is the full, aggregated call value for that link. We do this because there may
 	// exist multiple pods that cause the same workload/locality link, and we don't want them to duplicate.
 	serviceCallMap := make(map[Call]*Call)
-	for i := 0; i < len(podCalls); i++ {
-		// some pods may have been killed, so ignore here (errors are printed in getPodNode)
-		fromNode, err := k.getPodNode(podCalls[i].FromPod, podCalls[i].FromNamespace)
-		if err != nil {
-			continue
-		}
-		toNode, err := k.getPodNode(podCalls[i].ToPod, podCalls[i].ToNamespace)
-		if err != nil {
-			continue
-		}
-		fromLocality, err := k.getNodeLocality(fromNode, cloud)
-		if err != nil {
-			return nil, err
-		}
-		toLocality, err := k.getNodeLocality(toNode, cloud)
-		if err != nil {
-			return nil, err
-		}
+	for i := 0; i < len(rawCalls); i++ {
 		serviceLocalityKey := Call{
-			FromWorkload: podCalls[i].FromWorkload,
-			From:         fromLocality,
-			ToWorkload:   podCalls[i].ToWorkload,
-			To:           toLocality,
+			FromWorkload: rawCalls[i].FromWorkload,
+			From:         rawCalls[i].From,
+			ToWorkload:   rawCalls[i].ToWorkload,
+			To:           rawCalls[i].To,
 		}
 		// either create a new entry, or add to an existing one.
 		if _, ok := serviceCallMap[serviceLocalityKey]; !ok {
 			serviceCallMap[serviceLocalityKey] = &serviceLocalityKey
-			serviceLocalityKey.CallSize = podCalls[i].CallSize
+			serviceLocalityKey.CallSize = rawCalls[i].CallSize
 		} else {
-			serviceCallMap[serviceLocalityKey].CallSize += podCalls[i].CallSize
+			serviceCallMap[serviceLocalityKey].CallSize += rawCalls[i].CallSize
 		}
 		if i%10 == 0 {
 			for k, v := range serviceCallMap {
-				fmt.Printf("%v(%v) -> %v(%v): %v  |  link %v / %v\n", k.From, k.FromWorkload, k.To, k.ToWorkload, v.CallSize, i, len(podCalls))
+				fmt.Printf("%v(%v) -> %v(%v): %v  |  link %v / %v\n", k.From, k.FromWorkload, k.To, k.ToWorkload, v.CallSize, i, len(rawCalls))
 			}
 		}
 	}

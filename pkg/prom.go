@@ -69,11 +69,12 @@ func (d *CostAnalyzerProm) WaitForProm() error {
 	}
 }
 
-// GetPodCalls queries the prometheus API for istio_request_bytes_sum, given a time range.
+// GetCalls queries the prometheus API for istio_request_bytes_sum, given a time range.
+// returns an array of Calls, which contain locality and workload information.
 // todo take an actual timerange, and not the hacky "since" parameter.
-func (d *CostAnalyzerProm) GetPodCalls(since time.Duration) ([]*PodCall, error) {
+func (d *CostAnalyzerProm) GetCalls(since time.Duration) ([]*Call, error) {
 	promApi := v1.NewAPI(d.client)
-	calls := make([]*PodCall, 0)
+	calls := make([]*Call, 0)
 	query := "istio_request_bytes_sum{destination_pod!=\"\", destination_pod!=\"unknown\"}"
 	var result model.Value
 	var warn v1.Warnings
@@ -92,14 +93,12 @@ func (d *CostAnalyzerProm) GetPodCalls(since time.Duration) ([]*PodCall, error) 
 	}
 	v := result.(model.Vector)
 	for i := 0; i < len(v); i++ {
-		calls = append(calls, &PodCall{
-			ToPod:         string(v[i].Metric["destination_pod"]),
-			FromPod:       string(v[i].Metric["kubernetes_pod_name"]),
-			FromNamespace: string(v[i].Metric["source_workload_namespace"]),
-			ToWorkload:    string(v[i].Metric["destination_workload"]),
-			FromWorkload:  string(v[i].Metric["source_workload"]),
-			ToNamespace:   string(v[i].Metric["destination_workload_namespace"]),
-			CallSize:      uint64(v[i].Value),
+		calls = append(calls, &Call{
+			From:         string(v[i].Metric["destination_locality"]),
+			To:           string(v[i].Metric["locality"]),
+			ToWorkload:   string(v[i].Metric["destination_workload"]),
+			FromWorkload: string(v[i].Metric["source_workload"]),
+			CallSize:     uint64(v[i].Value),
 		})
 	}
 	return calls, nil
