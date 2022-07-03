@@ -16,24 +16,17 @@ To install the `istio-cost-analyzer` binary:
 go install github.com/tetratelabs/istio-cost-analyzer@latest
 ```
 
-You can alternatively clone the repo (`git clone git@github.com:tetratelabs/istio-cost-analyzer.git`) and build the latest
-`istio-cost-analyzer` (inside the `istio-cost-analyzer` repo):
-
-```
-go install
-```
-
-### Creating `destination_locality` labels
+### Creating `destination_locality` label
 
 You must create the `destination_locality` label for the cost tool to read from.
 
-You can either run the following command and have a webhook handle everything for you:
+You can either run the following command and have a webhook handle everything all existing Deployments and all Deployments created in the future:
 
 ```
 istio-cost-analyzer setupWebhook
 ```
 
-OR Add the following to all of your Kubernetes Deployments:
+OR Add the following to all of your Kubernetes Deployments now and in the future:
 
 ```yaml
 spec:
