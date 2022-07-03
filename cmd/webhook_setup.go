@@ -48,7 +48,7 @@ var costAnalyzerClusterRole = &v13.ClusterRole{
 }
 
 var webhookSetupCmd = &cobra.Command{
-	Use:   "setupWebhook",
+	Use:   "setup",
 	Short: "Create the webhook object in kubernetes and deploy the server container.",
 	Long:  "Setting up a webhook to receive config changes makes it so you don't have to manually change all the configuration",
 	RunE: func(cmd *cobra.Command, args []string) error {

@@ -23,8 +23,10 @@ You must create the `destination_locality` label for the cost tool to read from.
 You can either run the following command and have a webhook handle everything all existing Deployments and all Deployments created in the future:
 
 ```
-istio-cost-analyzer setupWebhook
+istio-cost-analyzer setup
 ```
+
+The setup command will also add a locality label to every pod in your chosen namespaces, which is necessary for the tool.
 
 OR Add the following to all of your Kubernetes Deployments now and in the future:
 
