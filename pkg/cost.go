@@ -17,12 +17,6 @@ type CostAnalysis struct {
 
 type Pricing map[string]map[string]float64
 
-type PricingGCP struct {
-	InterZone      map[string]interface{} `json:"inter-zone-intra-region"`
-	InterRegion    map[string]interface{} `json:"inter-region-intra-continent"`
-	InterContinent map[string]interface{} `json:"inter-continent"`
-}
-
 func NewCostAnalysis(priceSheetLocation string) (*CostAnalysis, error) {
 	pricing := Pricing{}
 	var data []byte

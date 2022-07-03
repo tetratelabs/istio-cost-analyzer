@@ -8,20 +8,22 @@ import (
 	"github.com/prometheus/common/model"
 	"net/http"
 	"os/exec"
+	"regexp"
 	"time"
 )
 
 // CostAnalyzerProm holds the prometheus routines necessary to collect
 // service<->service traffic data.
 type CostAnalyzerProm struct {
-	promEndpoint string
-	errChan      chan error
-	client       api.Client
+	promEndpoint  string
+	errChan       chan error
+	client        api.Client
+	localityMatch string
 }
 
 // NewAnalyzerProm creates a prometheus client given the endpoint,
 // and errors out if the endpoint is invalid.
-func NewAnalyzerProm(promEndpoint string) (*CostAnalyzerProm, error) {
+func NewAnalyzerProm(promEndpoint, cloud string) (*CostAnalyzerProm, error) {
 	client, err := api.NewClient(api.Config{
 		Address: promEndpoint,
 	})
@@ -29,10 +31,16 @@ func NewAnalyzerProm(promEndpoint string) (*CostAnalyzerProm, error) {
 		fmt.Printf("cannot initialize prom lib: %v", err)
 		return nil, err
 	}
+	// assume gcp
+	regex := "^[a-z]+-[a-z]+\\d-[a-z]$"
+	if cloud == "aws" {
+		regex = "^[a-z]+-[a-z]+-[a-z]\\d$"
+	}
 	return &CostAnalyzerProm{
-		promEndpoint: promEndpoint,
-		errChan:      make(chan error),
-		client:       client,
+		promEndpoint:  promEndpoint,
+		errChan:       make(chan error),
+		client:        client,
+		localityMatch: regex,
 	}, nil
 }
 
@@ -75,7 +83,7 @@ func (d *CostAnalyzerProm) WaitForProm() error {
 func (d *CostAnalyzerProm) GetCalls(since time.Duration) ([]*Call, error) {
 	promApi := v1.NewAPI(d.client)
 	calls := make([]*Call, 0)
-	query := "istio_request_bytes_sum{destination_pod!=\"\", destination_pod!=\"unknown\"}"
+	query := "istio_request_bytes_sum{destination_locality!=\"\", destination_locality!=\"unknown\"}"
 	var result model.Value
 	var warn v1.Warnings
 	var err error
@@ -93,6 +101,16 @@ func (d *CostAnalyzerProm) GetCalls(since time.Duration) ([]*Call, error) {
 	}
 	v := result.(model.Vector)
 	for i := 0; i < len(v); i++ {
+		// check if the locality is valid with regexp, if not, throw it out
+		// we do this because anyone can set labels on pods, and we don't want to
+		// count those.
+		if sourceMatch, _ := regexp.MatchString(d.localityMatch, string(v[i].Metric["destination_locality"])); !sourceMatch {
+			continue
+		}
+		if destMatch, _ := regexp.MatchString(d.localityMatch, string(v[i].Metric["locality"])); !destMatch {
+			continue
+		}
+
 		calls = append(calls, &Call{
 			From:         string(v[i].Metric["destination_locality"]),
 			To:           string(v[i].Metric["locality"]),
