@@ -7,9 +7,25 @@ data, and uses publicly-available cloud egress rates to estimate the overall egr
 
 To use this on your kubernetes cluster, make sure you have a kubeconfig in your home directory, and make sure Istio is installed on your cluster, with the prometheus addon enabled.
 
-### Creating `destination_locality` & `source_locality` labels
 
-First, you must create the `destination_locality` & `source_locality` labels for the cost tool to read from.
+### Installation
+
+To install the `istio-cost-analyzer` binary:
+
+```shell
+go install github.com/tetratelabs/istio-cost-analyzer@latest
+```
+
+You can alternatively clone the repo (`git clone git@github.com:tetratelabs/istio-cost-analyzer.git`) and build the latest
+`istio-cost-analyzer` (inside the `istio-cost-analyzer` repo):
+
+```
+go install
+```
+
+### Creating `destination_locality` labels
+
+You must create the `destination_locality` label for the cost tool to read from.
 
 You can either run the following command and have a webhook handle everything for you:
 
@@ -17,7 +33,7 @@ You can either run the following command and have a webhook handle everything fo
 istio-cost-analyzer setupWebhook
 ```
 
-OR Add the following to all of your deployments:
+OR Add the following to all of your Kubernetes Deployments:
 
 ```yaml
 spec:
@@ -26,6 +42,8 @@ spec:
       annotations:
         sidecar.istio.io/extraStatTags: destination_locality
 ```
+
+### Operator Setup
 
 Add the following to your Istio Operator:
 
@@ -49,22 +67,8 @@ spec:
 ```
 
 
-### Installation
 
-To install the `istio-cost-analyzer` binary:
-
-```shell
-go install github.com/tetratelabs/istio-cost-analyzer@latest
-```
-
-You can alternatively clone the repo (`git clone git@github.com:tetratelabs/istio-cost-analyzer.git`) and build the latest
-`istio-cost-analyzer` (inside the `istio-cost-analyzer` repo):
-
-```
-go install
-```
-
-### Running
+## Running
 
 Run:
 
@@ -76,15 +80,10 @@ This assumes your cluster is on GCP. To change this to the two options of AWS an
 ```
 istio-cost-analyzer analyze --cloud aws
 ```
-To point the cost analyzer to your own pricing sheet, run as follows:
+To point the cost analyzer to your own pricing sheet, run as follows (takes local files and urls):
 ```
 istio-cost-analyzer analyze --pricePath <path to .json>
 ```
-To only use data from a specific time range, run as follows:
-```
-istio-cost-analyzer analyze --queryBefore 10h
-```
-This will only use call data from 10 hours ago and previous.
 
 The output should look like (without `--details`): 
 
