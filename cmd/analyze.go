@@ -32,7 +32,7 @@ var analyzeCmd = &cobra.Command{
 	Short: "List all the service links in the mesh",
 	Long:  ``,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		analyzerProm, err := pkg.NewAnalyzerProm(prometheusEndpoint)
+		analyzerProm, err := pkg.NewAnalyzerProm(prometheusEndpoint, cloud)
 		kubeClient := pkg.NewAnalyzerKube()
 		if err != nil {
 			return err
@@ -62,16 +62,15 @@ var analyzeCmd = &cobra.Command{
 			return err
 		}
 		// query prometheus for raw pod calls
-		podCalls, err := analyzerProm.GetPodCalls(duration)
+		localityCalls, err := analyzerProm.GetCalls(duration)
 		if err != nil {
 			return err
 		}
 		// transform raw pod calls to locality information
-		localityCalls, err := kubeClient.GetLocalityCalls(podCalls, cloud)
+		localityCalls, err = kubeClient.TransformLocalityCalls(localityCalls)
 		if err != nil {
 			return err
 		}
-		localityCalls[0].From = "us-west1-c"
 		// calculate egress given locality information
 		totalCost, err := cost.CalculateEgress(localityCalls)
 		if err != nil {

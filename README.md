@@ -24,7 +24,7 @@ spec:
   template:
     metadata:
       annotations:
-        sidecar.istio.io/extraStatTags: destination_locality,source_locality
+        sidecar.istio.io/extraStatTags: destination_locality
 ```
 
 Add the following to your Istio Operator:
@@ -40,20 +40,12 @@ spec:
               metrics:
                 - name: request_bytes
                   dimensions:
-                    destination_locality: upstream_peer.labels['locality'].value
-                    source_locality: downstream_peer.labels['locality'].value
+                    destination_locality: downstream_peer.labels['locality'].value
             outboundSidecar:
               metrics:
                 - name: request_bytes
                   dimensions:
                     destination_locality: upstream_peer.labels['locality'].value
-                    source_locality: downstream_peer.labels['locality'].value
-            gateway:
-              metrics:
-                - name: request_bytes
-                  dimensions:
-                    destination_locality: upstream_peer.labels['locality'].value
-                    source_locality: downstream_peer.labels['locality'].value
 ```
 
 
