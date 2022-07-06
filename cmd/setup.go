@@ -28,8 +28,9 @@ var costAnalyzerClusterRoleBinding = &v13.ClusterRoleBinding{
 	},
 	Subjects: []v13.Subject{
 		{
-			Kind: "ServiceAccount",
-			Name: "cost-analyzer-sa",
+			Kind:      "ServiceAccount",
+			Name:      "cost-analyzer-sa",
+			Namespace: analyzerNamespace,
 		},
 	},
 }
@@ -81,8 +82,6 @@ spec:
               value: cost-analyzer-mutating-webhook-configuration
             - name: WEBHOOK_SERVICE
               value: cost-analyzer-mutating-webhook
-            - name: WEBHOOK_NAMESPACE
-              value: default
       containers:
         - name: cost-analyzer-mutating-webhook
           image: adiprerepa/cost-analyzer-mutating-webhook:latest
@@ -122,7 +121,7 @@ spec:
 		var crb *v13.ClusterRoleBinding
 		var status bool
 		cmd.Println("creating webhook deployment/service and role/binding...")
-		if sa, err, status = kubeClient.CreateServiceAccount(costAnalyzerSA, runNamespace); err != nil {
+		if sa, err, status = kubeClient.CreateServiceAccount(costAnalyzerSA, analyzerNamespace); err != nil {
 			cmd.PrintErrf("unable to create service account: %v", err)
 			return err
 		} else {
@@ -143,7 +142,7 @@ spec:
 			}
 		}
 		// todo dont do this now and actually properly structure the stuff
-		costAnalyzerClusterRoleBinding.Subjects[0].Namespace = runNamespace
+		costAnalyzerClusterRoleBinding.Subjects[0].Namespace = analyzerNamespace
 		if crb, err, status = kubeClient.CreateClusterRoleBinding(costAnalyzerClusterRoleBinding); err != nil {
 			cmd.PrintErrf("unable to create cluster role binding: %v", err)
 			return err
@@ -165,15 +164,19 @@ spec:
 			Value: cloud,
 		}, {
 			Name:  "NAMESPACE",
-			Value: runNamespace,
+			Value: targetNamespace,
 		}}
+		depl.Spec.Template.Spec.InitContainers[0].Env = append(depl.Spec.Template.Spec.InitContainers[0].Env, v12.EnvVar{
+			Name:  "WEBHOOK_NAMESPACE",
+			Value: analyzerNamespace,
+		})
 		serv := &v12.Service{}
 		decoder = k8Yaml.NewYAMLOrJSONDecoder(bytes.NewReader([]byte(webhookService)), 1000)
 		if err = decoder.Decode(&serv); err != nil {
 			cmd.PrintErrf("unable to decode service: %v", err)
 			return err
 		}
-		if serv, err, status = kubeClient.CreateService(serv, runNamespace); err != nil {
+		if serv, err, status = kubeClient.CreateService(serv, analyzerNamespace); err != nil {
 			cmd.PrintErrf("unable to create service: %v", err)
 			return err
 		} else {
@@ -183,7 +186,7 @@ spec:
 				cmd.Printf("service %v created\n", serv.Name)
 			}
 		}
-		if depl, err, status = kubeClient.CreateDeployment(depl, runNamespace); err != nil {
+		if depl, err, status = kubeClient.CreateDeployment(depl, analyzerNamespace); err != nil {
 			cmd.PrintErrf("unable to create deployment: %v", err)
 			return err
 		} else {

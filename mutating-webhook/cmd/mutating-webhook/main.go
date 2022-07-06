@@ -204,7 +204,7 @@ func mutatePod(w http.ResponseWriter, r *http.Request) {
 		log.Printf("annotationPatch: %v", annotationPatch)
 		patch = fmt.Sprintf(`[%v
 {"op":"add",
-"path":"/spec/template/metadata/annotations/sidecar.istio.io~1extraStatTags","value": "destination_locality,source_locality"}]`, annotationPatch)
+"path":"/spec/template/metadata/annotations/sidecar.istio.io~1extraStatTags","value": "destination_locality"}]`, annotationPatch)
 	}
 
 	// Construct response

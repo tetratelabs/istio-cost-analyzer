@@ -30,6 +30,10 @@ func main() {
 		mutationCfgName, _  = os.LookupEnv("MUTATE_CONFIG")
 		webhookService, _   = os.LookupEnv("WEBHOOK_SERVICE")
 	)
+	log.Printf("webhookNamespace: %s, mutationCfgName: %s", webhookNamespace, mutationCfgName)
+	if webhookNamespace == "" {
+		webhookNamespace = "istio-system"
+	}
 	config := ctrl.GetConfigOrDie()
 	kubeClient, err := kubernetes.NewForConfig(config)
 	if err != nil {
@@ -37,8 +41,8 @@ func main() {
 	}
 	org := "tetrate.io"
 	dnsNames := []string{"cost-analyzer-mutating-webhook",
-		"cost-analyzer-mutating-webhook.default", "cost-analyzer-mutating-webhook.default.svc"}
-	commonName := "cost-analyzer-mutating-webhook.default.svc"
+		"cost-analyzer-mutating-webhook." + webhookNamespace, "cost-analyzer-mutating-webhook." + webhookNamespace + ".svc"}
+	commonName := "cost-analyzer-mutating-webhook." + webhookNamespace + ".svc"
 	caPEM, certPEM, certKeyPEM, err := generateCert([]string{org}, dnsNames, commonName)
 	if err != nil {
 		log.Fatalf("unable to generate cert: %v", err)

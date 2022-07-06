@@ -12,12 +12,14 @@ import (
 const prometheusEndpoint = "http://localhost:9990"
 
 var (
-	cloud        string
-	pricePath    string
-	queryBefore  string
-	details      bool
-	promNs       string
-	runNamespace string
+	cloud             string
+	pricePath         string
+	queryBefore       string
+	details           bool
+	promNs            string
+	runNamespace      string
+	analyzerNamespace string
+	targetNamespace   string
 )
 
 // todo these should change to tetrate-hosted s3 files, with which we can send over cluster information
@@ -86,8 +88,11 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&pricePath, "pricePath", "", "if custom egress rates are provided, dapani will use the rates in this file.")
 	rootCmd.PersistentFlags().StringVar(&queryBefore, "queryBefore", "0s", "if provided a time duration (go format), dapani will only use data from that much time ago and before.")
 	rootCmd.PersistentFlags().BoolVar(&details, "details", false, "if true, tool will provide a more detailed view of egress costs, including both destination and source")
-	rootCmd.PersistentFlags().StringVar(&promNs, "promNamespace", "istio-system", "promNs that the prometheus pod lives in")
-	rootCmd.PersistentFlags().StringVar(&runNamespace, "namespace", "default", "namespace that the cost analyzer lives in and uses for all analysis and queries")
+
+	rootCmd.PersistentFlags().StringVar(&analyzerNamespace, "analyzerNamespace", "istio-system", "namespace that the cost analyzer and associated resources lives in")
+	rootCmd.PersistentFlags().StringVar(&targetNamespace, "targetNamespace", "default", "namespace that the cost analyzer will analyze")
+	rootCmd.PersistentFlags().StringVar(&promNs, "promNamespace", analyzerNamespace, "promNs that the prometheus pod lives in, if different from analyzerNamespace")
+
 	rootCmd.AddCommand(analyzeCmd)
 	rootCmd.AddCommand(webhookSetupCmd)
 	rootCmd.AddCommand(destroyCmd)
