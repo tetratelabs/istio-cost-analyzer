@@ -78,7 +78,7 @@ func main() {
 				Rule: admissionregistrationv1.Rule{
 					APIGroups:   []string{"apps"},
 					APIVersions: []string{"v1"},
-					Resources:   []string{"pods", "deployment", "deployments", "pod"},
+					Resources:   []string{"deployments"},
 				},
 			}},
 			FailurePolicy:           &fail,
