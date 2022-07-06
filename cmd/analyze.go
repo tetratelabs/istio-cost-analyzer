@@ -90,4 +90,5 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&runNamespace, "namespace", "default", "namespace that the cost analyzer lives in and uses for all analysis and queries")
 	rootCmd.AddCommand(analyzeCmd)
 	rootCmd.AddCommand(webhookSetupCmd)
+	rootCmd.AddCommand(destroyCmd)
 }

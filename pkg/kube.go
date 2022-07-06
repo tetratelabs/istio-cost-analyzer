@@ -158,3 +158,7 @@ func (k *KubeClient) CreateClusterRole(clusterRole *v13.ClusterRole) (*v13.Clust
 	}
 	return cr, err, false
 }
+
+func (k *KubeClient) Client() kubernetes.Interface {
+	return k.clientSet
+}

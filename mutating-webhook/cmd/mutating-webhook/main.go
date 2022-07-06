@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	v1 "k8s.io/api/apps/v1"
+	runtime2 "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -54,9 +55,9 @@ func main() {
 		panic(err.Error())
 	}
 	stopCh := make(chan struct{})
-	// concurrently watch for pod creation and label the pod with the node locality
-	watchAndLabelPods(stopCh)
-	// annotate existing deployments with stats tags
+	//concurrently watch for pod creation and label the pod with the node locality
+	go watchAndLabelPods(stopCh)
+	//annotate existing deployments with stats tags
 	if err = annotateExistingDeployments(); err != nil {
 		log.Fatal(err)
 	}
@@ -68,18 +69,22 @@ func main() {
 
 // annotateExistingDeployments annotates existing deployments with stats tags.
 func annotateExistingDeployments() error {
+	log.Println("fetching deployments...")
 	depl, err := clientset.AppsV1().Deployments(namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
+	log.Printf("annotating %v deployments\n", len(depl.Items))
 	for _, d := range depl.Items {
 		if d.Spec.Template.Annotations == nil {
 			d.Spec.Template.Annotations = make(map[string]string)
 		}
-		if v, ok := d.Spec.Template.Annotations["sidecar.istio.io/extraStatTags"]; ok && v == "destination_locality,source_locality" {
+		if v, ok := d.Spec.Template.Annotations["sidecar.istio.io/extraStatTags"]; ok && v == "destination_locality" {
+			log.Printf("skipping deployment %v\n", d.Name)
 			continue
 		}
-		d.Spec.Template.Annotations["sidecar.istio.io/extraStatTags"] = "destination_locality,source_locality"
+		log.Printf("annotating deployment %v\n", d.Name)
+		d.Spec.Template.Annotations["sidecar.istio.io/extraStatTags"] = "destination_locality"
 		_, err = clientset.AppsV1().Deployments(namespace).Update(context.TODO(), &d, metav1.UpdateOptions{})
 		if err != nil {
 			logger.Printf("error in updating deployment, skipping...: %v\n", err)
@@ -90,13 +95,15 @@ func annotateExistingDeployments() error {
 
 // watchAndLabelPod watches for pod creation and labels the pod with the node locality.
 func watchAndLabelPods(stopCh <-chan struct{}) {
-	factory := informers.NewSharedInformerFactory(clientset, 0)
+	log.Println("labeling pods...")
+	factory := informers.NewSharedInformerFactoryWithOptions(clientset, 0, informers.WithNamespace(namespace))
 	// Get pods from informer
 	informer := factory.Core().V1().Pods().Informer()
-	//defer runtime.HandleCrash()
+	defer runtime2.HandleCrash()
 	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			pod := obj.(*corev1.Pod)
+			log.Printf("updating pod %v\n", pod.Name)
 			if pod.Namespace != namespace {
 				return
 			}
@@ -117,7 +124,7 @@ func watchAndLabelPods(stopCh <-chan struct{}) {
 			log.Printf("Pod %v updated\n", pod.Name)
 		},
 	})
-	go informer.Run(stopCh)
+	informer.Run(stopCh)
 }
 
 var deserializer = codecs.UniversalDeserializer()

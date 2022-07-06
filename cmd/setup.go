@@ -42,7 +42,7 @@ var costAnalyzerClusterRole = &v13.ClusterRole{
 		{
 			APIGroups: []string{"", "admissionregistration.k8s.io", "apps"},
 			Resources: []string{"mutatingwebhookconfigurations", "pods", "nodes", "deployments"},
-			Verbs:     []string{"get", "create", "patch", "list ", "update"},
+			Verbs:     []string{"get", "create", "patch", "list", "update"},
 		},
 	},
 }
