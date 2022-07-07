@@ -10,9 +10,8 @@ import (
 var rootCmd = &cobra.Command{
 	Use:   "istio-cost-analyzer",
 	Short: "Istio Cost Tooling",
-
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("run istio-cost-analyzer analyze")
+		fmt.Println("usage: istio-cost-analyzer analyze --targetNamespace <ns>")
 	},
 }
 

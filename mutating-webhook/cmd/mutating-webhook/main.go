@@ -115,6 +115,11 @@ func watchAndLabelPods(stopCh <-chan struct{}) {
 			}
 			// Label the pod with the node locality
 			pod.ObjectMeta.Labels["locality"] = locality
+			// annotate the pod with destination_locality tag
+			if pod.Annotations == nil {
+				pod.Annotations = make(map[string]string)
+			}
+			pod.Annotations["sidecar.istio.io/extraStatTags"] = "destination_locality"
 			// Update the pod
 			_, err = clientset.CoreV1().Pods(pod.Namespace).Update(context.TODO(), pod, metav1.UpdateOptions{})
 			if err != nil {
