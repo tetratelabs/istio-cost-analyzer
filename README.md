@@ -23,20 +23,15 @@ You must create the `destination_locality` label for the cost tool to read from.
 You can either run the following command and have a webhook handle everything all existing Deployments and all Deployments created in the future:
 
 ```
-istio-cost-analyzer setup
+istio-cost-analyzer setup --targetNamespace <ns>
 ```
 
-The setup command will also add a locality label to every pod in your chosen namespaces, which is necessary for the tool.
+Set the `targetNamespace` to the namespace you want to analyze. Default is `default`.
 
-OR Add the following to all of your Kubernetes Deployments now and in the future:
+If you want the analyzer config to not exist in the `istio-system` namespace (default), you can set the `--analyzerNamespace` flag.
 
-```yaml
-spec:
-  template:
-    metadata:
-      annotations:
-        sidecar.istio.io/extraStatTags: destination_locality
-```
+The setup command will also add a locality label to every pod in your `targetNamespace`, which is necessary for the tool.
+
 
 ### Operator Setup
 
@@ -68,17 +63,19 @@ spec:
 Run:
 
 ```
-istio-cost-analyzer analyze
+istio-cost-analyzer analyze --targetNamespace <analysis namespace>
 ```
 
 This assumes your cluster is on GCP. To change this to the two options of AWS and GCP, run as follows:
 ```
-istio-cost-analyzer analyze --cloud aws
+istio-cost-analyzer analyze --targetNamespace <analysis namespace> --cloud aws
 ```
 To point the cost analyzer to your own pricing sheet, run as follows (takes local files and urls):
 ```
-istio-cost-analyzer analyze --pricePath <path to .json>
+istio-cost-analyzer analyze --pricePath <path to .json> --targetNamespace <analysis namespace>
 ```
+
+The flag `--targetNamespace` needs to match the `--targetNamespace` you set in the `setup` command.
 
 The output should look like (without `--details`): 
 
@@ -103,3 +100,13 @@ productpage-v1 	us-west1-b     	reviews-v3          	us-west1-b          	0.0585
 reviews-v2     	us-west1-b     	ratings-v1          	us-west1-b          	0.056150        	-     	
 reviews-v3     	us-west1-b     	ratings-v1          	us-west1-b          	0.058400        	-    
 ```
+
+### Cleanup
+
+If you want to restart installation of the tool or don't want it in your cluster anymore, you can run:
+    
+```
+istio-cost-analyzer destroy
+```
+
+You must set the `--analyzerNamespace` flag if you set it in the `setup` command.
