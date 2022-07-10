@@ -2,18 +2,20 @@ package pkg
 
 import (
 	"context"
-	"flag"
 	"fmt"
+	"istio.io/client-go/pkg/clientset/versioned"
 	v12 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	v13 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/util/homedir"
-	"path/filepath"
 	"strings"
 )
+
+var iopResource = schema.GroupVersionResource{Group: "install.istio.io", Version: "v1alpha3", Resource: "istiooperators"}
 
 // KubeClient just wraps the kubernetes API.
 // todo should we just do:
@@ -22,22 +24,16 @@ import (
 //  ```
 // if we get no value from just wrapping?
 type KubeClient struct {
-	clientSet *kubernetes.Clientset
+	clientSet  *kubernetes.Clientset
+	dynamic    dynamic.Interface
+	kubeconfig string
 }
 
 // NewAnalyzerKube creates a clientset using the kubeconfig found in the home directory.
 // todo make kubeconfig a settable parameter in analyzer.go
-func NewAnalyzerKube() *KubeClient {
-	var kubeconfig *string
-	if home := homedir.HomeDir(); home != "" {
-		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
-	} else {
-		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
-	}
-	flag.Parse()
-
+func NewAnalyzerKube(kubeconfig string) *KubeClient {
 	// use the current context in kubeconfig
-	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
+	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -47,8 +43,11 @@ func NewAnalyzerKube() *KubeClient {
 	if err != nil {
 		panic(err.Error())
 	}
+	dynamicClient := dynamic.NewForConfigOrDie(config)
 	return &KubeClient{
-		clientSet: clientset,
+		clientSet:  clientset,
+		kubeconfig: kubeconfig,
+		dynamic:    dynamicClient,
 	}
 }
 
@@ -161,4 +160,28 @@ func (k *KubeClient) CreateClusterRole(clusterRole *v13.ClusterRole) (*v13.Clust
 
 func (k *KubeClient) Client() kubernetes.Interface {
 	return k.clientSet
+}
+
+func (k *KubeClient) IstioClient() *versioned.Clientset {
+	config, err := clientcmd.BuildConfigFromFlags("", k.kubeconfig)
+	if err != nil {
+		panic(err.Error())
+	}
+	return versioned.NewForConfigOrDie(config)
+}
+
+func (k *KubeClient) EditIstioOperator(opName, opNamespace string) error {
+	list, err := k.dynamic.Resource(iopResource).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+	//var iop *unstructured.Unstructured
+	//for _, item := range list.Items {
+	//	if item.GetName() == opName {
+	//		iop = &item
+	//		break
+	//	}
+	//}
+	fmt.Printf("OPERATORS: %v %v", len(list.Items), list.Items)
+	return nil
 }
