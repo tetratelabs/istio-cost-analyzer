@@ -8,14 +8,16 @@ import (
 	v1 "k8s.io/api/core/v1"
 	v13 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"strings"
 )
 
-var iopResource = schema.GroupVersionResource{Group: "install.istio.io", Version: "v1alpha3", Resource: "istiooperators"}
+var iopResource = schema.GroupVersionResource{Group: "install.istio.io", Version: "v1alpha1", Resource: "istiooperators"}
 
 // KubeClient just wraps the kubernetes API.
 // todo should we just do:
@@ -170,11 +172,105 @@ func (k *KubeClient) IstioClient() *versioned.Clientset {
 	return versioned.NewForConfigOrDie(config)
 }
 
+func (k *KubeClient) CreateIstioOperator(opName, opNamespace string) error {
+	istioOperator := &unstructured.Unstructured{}
+	istioOperator.SetUnstructuredContent(map[string]interface{}{
+		"apiVersion": "install.istio.io/v1alpha1",
+		"kind":       "IstioOperator",
+		"metadata": map[string]interface{}{
+			"name":      opName,
+			"namespace": opNamespace,
+		},
+		"spec": map[string]interface{}{
+			"profile": "demo",
+			//"values": map[string]interface{}{
+			//	"telemetry": map[string]interface{}{
+			//		"prometheus": map[string]interface{}{
+			//			"configOverride": map[string]interface{}{
+			//				"inboundSidecar": map[string]interface{}{
+			//					"metrics": []interface{}{
+			//						map[string]interface{}{
+			//							"name": "request_bytes",
+			//							"dimensions": map[string]interface{}{
+			//								"destination_locality": "downstream_peer.labels['locality'].value",
+			//							},
+			//						},
+			//					},
+			//				},
+			//				"outboundSidecar": map[string]interface{}{
+			//					"metrics": []interface{}{
+			//						map[string]interface{}{
+			//							"name": "request_bytes",
+			//							"dimensions": map[string]interface{}{
+			//								"destination_locality": "upstream_peer.labels['locality'].value",
+			//							},
+			//						},
+			//					},
+			//				},
+			//			},
+			//		},
+			//	},
+			//},
+		},
+	})
+	_, err := k.dynamic.Resource(iopResource).Namespace(opNamespace).Create(context.TODO(), istioOperator, metav1.CreateOptions{})
+	return err
+}
+
 func (k *KubeClient) EditIstioOperator(opName, opNamespace string) error {
-	list, err := k.dynamic.Resource(iopResource).List(context.TODO(), metav1.ListOptions{})
+	_, err := k.dynamic.Resource(iopResource).Namespace(opNamespace).Get(context.TODO(), opName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
+	patch := `
+[
+   {
+      "path":"/spec",
+      "op":"add",
+      "value":{
+         "values":{
+            "telemetry":{
+               "v2":{
+                  "prometheus":{
+                     "configOverride":{
+                        "inboundSidecar":{
+                           "metrics":[
+                              {
+                                 "dimensions":{
+                                    "destination_locality":"downstream_peer.labels['locality'].value"
+                                 },
+                                 "name":"request_bytes"
+                              }
+                           ]
+                        },
+                        "outboundSidecar":{
+                           "metrics":[
+                              {
+                                 "dimensions":{
+                                    "destination_locality":"upstream_peer.labels['locality'].value"
+                                 },
+                                 "name":"request_bytes"
+                              }
+                           ]
+                        }
+                     }
+                  }
+               }
+            }
+         }
+      }
+   }
+]
+`
+	_, err = k.dynamic.Resource(iopResource).Namespace(opNamespace).Patch(context.TODO(), opName, types.JSONPatchType, []byte(patch), metav1.PatchOptions{})
+	if err != nil {
+		return err
+	}
+	//jsonStr, err := json.Marshal(res)
+	//if err != nil {
+	//	return err
+	//}
+	//fmt.Printf("OPERATOR: %v\n", string(jsonStr))
 	//var iop *unstructured.Unstructured
 	//for _, item := range list.Items {
 	//	if item.GetName() == opName {
@@ -182,6 +278,5 @@ func (k *KubeClient) EditIstioOperator(opName, opNamespace string) error {
 	//		break
 	//	}
 	//}
-	fmt.Printf("OPERATORS: %v %v", len(list.Items), list.Items)
 	return nil
 }

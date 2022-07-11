@@ -13,7 +13,7 @@ var destroyCmd = &cobra.Command{
 	Short: "Destroy the webhook object in kubernetes and delete the server container.",
 	Long:  "Destroying the webhook object in kubernetes and deleting the server container makes it so you don't have to manually change all the configuration",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		kubeClient := pkg.NewAnalyzerKube()
+		kubeClient := pkg.NewAnalyzerKube(kubeconfig)
 		// todo make config names package-wide constants
 		// todo more visibility into errors
 		if err := kubeClient.Client().AppsV1().Deployments(analyzerNamespace).Delete(context.TODO(), "cost-analyzer-mutating-webhook", metav1.DeleteOptions{}); err != nil {

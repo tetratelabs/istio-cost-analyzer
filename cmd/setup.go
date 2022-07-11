@@ -198,11 +198,15 @@ spec:
 			}
 		}
 
-		if operatorName == "" {
-			err := kubeClient.EditIstioOperator("", "")
-			if err != nil {
-				cmd.PrintErrf("unable to edit Istio Operator: %v", err)
-			}
+		err = kubeClient.CreateIstioOperator("cost-istio-operator", "istio-system")
+		//if operatorName == "" {
+		//	err := kubeClient.EditIstioOperator("", "")
+		//	if err != nil {
+		//		cmd.PrintErrf("unable to edit Istio Operator: %v", err)
+		//	}
+		//}
+		if err != nil {
+			cmd.PrintErrf("unable to create Istio Operator: %v", err)
 		}
 		return nil
 	},
