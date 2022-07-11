@@ -88,8 +88,9 @@ var analyzeCmd = &cobra.Command{
 }
 
 func init() {
-	webhookSetupCmd.PersistentFlags().StringVar(&operatorName, "operatorName", "", "name of your istio operator. If not set, cost tool will use the first operator found in the istio-system namespace")
-	webhookSetupCmd.PersistentFlags().StringVar(&operatorNamespace, "operatorNamespace", "istio-system", "namespace of your istio operator")
+	// setup/destroy need this
+	rootCmd.PersistentFlags().StringVar(&operatorName, "operatorName", "", "name of your istio operator. If not set, cost tool will use the first operator found in the istio-system namespace")
+	rootCmd.PersistentFlags().StringVar(&operatorNamespace, "operatorNamespace", "istio-system", "namespace of your istio operator")
 
 	analyzeCmd.PersistentFlags().StringVar(&pricePath, "pricePath", "", "if custom egress rates are provided, dapani will use the rates in this file.")
 	analyzeCmd.PersistentFlags().StringVar(&queryBefore, "queryBefore", "0s", "if provided a time duration (go format), dapani will only use data from that much time ago and before.")
@@ -100,6 +101,8 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&analyzerNamespace, "analyzerNamespace", "istio-system", "namespace that the cost analyzer and associated resources lives in")
 	rootCmd.PersistentFlags().StringVar(&targetNamespace, "targetNamespace", "default", "namespace that the cost analyzer will analyze")
 	rootCmd.PersistentFlags().StringVar(&kubeconfig, "kubeconfig", filepath.Join(homedir.HomeDir(), ".kube", "config"), "path to kubeconfig file")
+
+	destroyCmd.PersistentFlags().BoolVarP(&destroyOperator, "destroyOperator", "o", false, "if true, cost analyzer will destroy the istio operator config that it created")
 
 	rootCmd.AddCommand(analyzeCmd)
 	rootCmd.AddCommand(webhookSetupCmd)

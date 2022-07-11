@@ -8,6 +8,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+var destroyOperator bool
+
 var destroyCmd = &cobra.Command{
 	Use:   "destroy",
 	Short: "Destroy the webhook object in kubernetes and delete the server container.",
@@ -33,6 +35,19 @@ var destroyCmd = &cobra.Command{
 		}
 		if err := kubeClient.Client().CoreV1().ServiceAccounts(analyzerNamespace).Delete(context.TODO(), "cost-analyzer-sa", metav1.DeleteOptions{}); err != nil {
 			fmt.Println(err)
+		}
+		if destroyOperator {
+			if operatorName == "" {
+				var err error
+				operatorName, err = kubeClient.GetDefaultOperator(operatorNamespace)
+				if err != nil {
+					fmt.Printf("not destroying operator: %v", err)
+					return nil
+				}
+			}
+			if err := kubeClient.DeleteOperatorConfig(operatorName, operatorNamespace); err != nil {
+				fmt.Println(err)
+			}
 		}
 		return nil
 	},
