@@ -172,51 +172,6 @@ func (k *KubeClient) IstioClient() *versioned.Clientset {
 	return versioned.NewForConfigOrDie(config)
 }
 
-func (k *KubeClient) CreateIstioOperator(opName, opNamespace string) error {
-	istioOperator := &unstructured.Unstructured{}
-	istioOperator.SetUnstructuredContent(map[string]interface{}{
-		"apiVersion": "install.istio.io/v1alpha1",
-		"kind":       "IstioOperator",
-		"metadata": map[string]interface{}{
-			"name":      opName,
-			"namespace": opNamespace,
-		},
-		"spec": map[string]interface{}{
-			"profile": "demo",
-			//"values": map[string]interface{}{
-			//	"telemetry": map[string]interface{}{
-			//		"prometheus": map[string]interface{}{
-			//			"configOverride": map[string]interface{}{
-			//				"inboundSidecar": map[string]interface{}{
-			//					"metrics": []interface{}{
-			//						map[string]interface{}{
-			//							"name": "request_bytes",
-			//							"dimensions": map[string]interface{}{
-			//								"destination_locality": "downstream_peer.labels['locality'].value",
-			//							},
-			//						},
-			//					},
-			//				},
-			//				"outboundSidecar": map[string]interface{}{
-			//					"metrics": []interface{}{
-			//						map[string]interface{}{
-			//							"name": "request_bytes",
-			//							"dimensions": map[string]interface{}{
-			//								"destination_locality": "upstream_peer.labels['locality'].value",
-			//							},
-			//						},
-			//					},
-			//				},
-			//			},
-			//		},
-			//	},
-			//},
-		},
-	})
-	_, err := k.dynamic.Resource(iopResource).Namespace(opNamespace).Create(context.TODO(), istioOperator, metav1.CreateOptions{})
-	return err
-}
-
 func (k *KubeClient) GetDefaultOperator(ns string) (string, error) {
 	rl, err := k.dynamic.Resource(iopResource).Namespace(ns).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
