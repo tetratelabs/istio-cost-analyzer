@@ -5,7 +5,7 @@ data, and uses publicly-available cloud egress rates to estimate the overall egr
 
 ## Usage
 
-To use this on your kubernetes cluster, make sure you have a kubeconfig in your home directory, and make sure Istio is installed on your cluster, with the prometheus addon enabled.
+To use this on your kubernetes cluster, make sure you have a kubeconfig in your home directory, and make sure Istio is installed on your cluster, with the prometheus addon enabled. You must also have a `HEALTHY` Istio Operator available.
 
 
 ### Installation
