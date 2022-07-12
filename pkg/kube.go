@@ -2,18 +2,22 @@ package pkg
 
 import (
 	"context"
-	"flag"
+	"errors"
 	"fmt"
+	"istio.io/client-go/pkg/clientset/versioned"
 	v12 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	v13 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/util/homedir"
-	"path/filepath"
 	"strings"
 )
+
+var iopResource = schema.GroupVersionResource{Group: "install.istio.io", Version: "v1alpha1", Resource: "istiooperators"}
 
 // KubeClient just wraps the kubernetes API.
 // todo should we just do:
@@ -22,22 +26,16 @@ import (
 //  ```
 // if we get no value from just wrapping?
 type KubeClient struct {
-	clientSet *kubernetes.Clientset
+	clientSet  *kubernetes.Clientset
+	dynamic    dynamic.Interface
+	kubeconfig string
 }
 
 // NewAnalyzerKube creates a clientset using the kubeconfig found in the home directory.
 // todo make kubeconfig a settable parameter in analyzer.go
-func NewAnalyzerKube() *KubeClient {
-	var kubeconfig *string
-	if home := homedir.HomeDir(); home != "" {
-		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
-	} else {
-		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
-	}
-	flag.Parse()
-
+func NewAnalyzerKube(kubeconfig string) *KubeClient {
 	// use the current context in kubeconfig
-	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
+	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -47,8 +45,11 @@ func NewAnalyzerKube() *KubeClient {
 	if err != nil {
 		panic(err.Error())
 	}
+	dynamicClient := dynamic.NewForConfigOrDie(config)
 	return &KubeClient{
-		clientSet: clientset,
+		clientSet:  clientset,
+		kubeconfig: kubeconfig,
+		dynamic:    dynamicClient,
 	}
 }
 
@@ -161,4 +162,150 @@ func (k *KubeClient) CreateClusterRole(clusterRole *v13.ClusterRole) (*v13.Clust
 
 func (k *KubeClient) Client() kubernetes.Interface {
 	return k.clientSet
+}
+
+func (k *KubeClient) IstioClient() *versioned.Clientset {
+	config, err := clientcmd.BuildConfigFromFlags("", k.kubeconfig)
+	if err != nil {
+		panic(err.Error())
+	}
+	return versioned.NewForConfigOrDie(config)
+}
+
+func (k *KubeClient) GetDefaultOperator(ns string) (string, error) {
+	rl, err := k.dynamic.Resource(iopResource).Namespace(ns).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return "", err
+	}
+	for _, r := range rl.Items {
+		if _, ok := r.Object["status"]; ok {
+			if status, ok := r.Object["status"].(map[string]interface{})["status"]; ok && status != nil && status.(string) == "HEALTHY" {
+				return r.GetName(), nil
+			}
+		}
+	}
+	return "", errors.New("no default operator found, please specify a healthy istio operator")
+}
+
+func (k *KubeClient) EditIstioOperator(opName, opNamespace string) error {
+	res, err := k.dynamic.Resource(iopResource).Namespace(opNamespace).Get(context.TODO(), opName, metav1.GetOptions{})
+	res, neededUpdate := normalizeOperator(res)
+	if err != nil {
+		return err
+	}
+	if !neededUpdate {
+		return nil
+	}
+	_, err = k.dynamic.Resource(iopResource).Namespace(opNamespace).Update(context.TODO(), res, metav1.UpdateOptions{})
+	return err
+}
+
+func (k *KubeClient) DeleteOperatorConfig(opName, opNs string) error {
+	res, err := k.dynamic.Resource(iopResource).Namespace(opNs).Get(context.TODO(), opName, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	res = denormalizeOperator(res)
+	_, err = k.dynamic.Resource(iopResource).Namespace(opNs).Update(context.TODO(), res, metav1.UpdateOptions{})
+	return err
+}
+
+// literal trash but it works
+func normalizeOperator(res *unstructured.Unstructured) (*unstructured.Unstructured, bool) {
+	// lord forgive me for I have sinned
+	// theres probably a better way to figure this out with JSONPatch but i'm lazy
+	if v := res.Object["spec"].(map[string]interface{})["values"]; v == nil {
+		res.Object["spec"].(map[string]interface{})["values"] = make(map[string]interface{})
+	}
+	if v := res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"]; v == nil {
+		res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"] = make(map[string]interface{})
+	}
+	if v := res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["prometheus"]; v == nil {
+		res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["prometheus"] = make(map[string]interface{})
+	}
+	if v := res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["prometheus"].(map[string]interface{})["configOverride"]; v == nil {
+		res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["prometheus"].(map[string]interface{})["configOverride"] = make(map[string]interface{})
+	}
+	if v := res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["prometheus"].(map[string]interface{})["configOverride"].(map[string]interface{})["inboundSidecar"]; v == nil {
+		res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["prometheus"].(map[string]interface{})["configOverride"].(map[string]interface{})["inboundSidecar"] = make(map[string]interface{})
+	}
+	inbound := res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["prometheus"].(map[string]interface{})["configOverride"].(map[string]interface{})["inboundSidecar"].(map[string]interface{})["metrics"]
+	if inbound == nil {
+		inbound = make([]interface{}, 0)
+	}
+	if v := res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["prometheus"].(map[string]interface{})["configOverride"].(map[string]interface{})["outboundSidecar"]; v == nil {
+		res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["prometheus"].(map[string]interface{})["configOverride"].(map[string]interface{})["outboundSidecar"] = make(map[string]interface{})
+	}
+	outbound := res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["prometheus"].(map[string]interface{})["configOverride"].(map[string]interface{})["outboundSidecar"].(map[string]interface{})["metrics"]
+	if outbound == nil {
+		outbound = make([]interface{}, 0)
+	}
+
+	// check if we already wrote
+	for _, i := range inbound.([]interface{}) {
+		if i.(map[string]interface{})["dimensions"] != nil && i.(map[string]interface{})["dimensions"].(map[string]interface{})["destination_locality"] != nil {
+			return res, false
+		}
+	}
+	for _, o := range outbound.([]interface{}) {
+		if o.(map[string]interface{})["dimensions"] != nil && o.(map[string]interface{})["dimensions"].(map[string]interface{})["destination_locality"] != nil {
+			return res, false
+		}
+	}
+
+	// actual config
+	// we dont want to override anything
+	for i, in := range inbound.([]interface{}) {
+		if in.(map[string]interface{})["name"].(string) == "request_bytes" {
+			in.(map[string]interface{})["dimensions"].(map[string]interface{})["destination_locality"] = "downstream_peer.labels['locality'].value"
+		}
+		inbound.([]interface{})[i] = in
+	}
+
+	for i, out := range outbound.([]interface{}) {
+		if out.(map[string]interface{})["name"].(string) == "request_bytes" {
+			out.(map[string]interface{})["dimensions"].(map[string]interface{})["destination_locality"] = "upstream_peer.labels['locality'].value"
+		}
+		outbound.([]interface{})[i] = out
+	}
+
+	if len(inbound.([]interface{})) == 0 {
+		inbound = append(inbound.([]interface{}), map[string]interface{}{
+			"name": "request_bytes",
+			"dimensions": map[string]interface{}{
+				"destination_locality": "downstream_peer.labels['locality'].value",
+			},
+		})
+	}
+
+	if len(outbound.([]interface{})) == 0 {
+		outbound = append(outbound.([]interface{}), map[string]interface{}{
+			"name": "request_bytes",
+			"dimensions": map[string]interface{}{
+				"destination_locality": "upstream_peer.labels['locality'].value",
+			},
+		})
+	}
+
+	res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["prometheus"].(map[string]interface{})["configOverride"].(map[string]interface{})["inboundSidecar"].(map[string]interface{})["metrics"] = inbound
+	res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["prometheus"].(map[string]interface{})["configOverride"].(map[string]interface{})["outboundSidecar"].(map[string]interface{})["metrics"] = outbound
+	return res, true
+}
+
+// delete our config
+func denormalizeOperator(res *unstructured.Unstructured) *unstructured.Unstructured {
+	if v := res.Object["spec"].(map[string]interface{})["values"]; v == nil {
+		return res
+	}
+	if v := res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"]; v == nil {
+		return res
+	}
+	if v := res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["prometheus"]; v == nil {
+		return res
+	}
+	if v := res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["prometheus"].(map[string]interface{})["configOverride"]; v == nil {
+		return res
+	}
+	res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["prometheus"].(map[string]interface{})["configOverride"] = make(map[string]interface{})
+	return res
 }

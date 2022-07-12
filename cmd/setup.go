@@ -53,7 +53,8 @@ var webhookSetupCmd = &cobra.Command{
 	Short: "Create the webhook object in kubernetes and deploy the server container.",
 	Long:  "Setting up a webhook to receive config changes makes it so you don't have to manually change all the configuration",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		kubeClient := pkg.NewAnalyzerKube()
+		kubeClient := pkg.NewAnalyzerKube(kubeconfig)
+		//ic := kubeClient.IstioClient()
 		var err error
 		webhookDeployment := `
 kind: Deployment
@@ -195,6 +196,21 @@ spec:
 			} else {
 				cmd.Printf("deployment %v created\n", depl.Name)
 			}
+		}
+
+		// istio operator setup
+		if operatorName == "" {
+			// first healthy operator
+			operatorName, err = kubeClient.GetDefaultOperator(operatorNamespace)
+			if err != nil {
+				cmd.PrintErrf("unable to get default operator: %v", err)
+				return err
+			}
+		}
+		err = kubeClient.EditIstioOperator(operatorName, operatorNamespace)
+		if err != nil {
+			cmd.PrintErrf("unable to edit Istio Operator: %v", err)
+			return err
 		}
 		return nil
 	},

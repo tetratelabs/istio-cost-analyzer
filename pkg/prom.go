@@ -9,16 +9,20 @@ import (
 	"net/http"
 	"os/exec"
 	"regexp"
+	"strings"
 	"time"
 )
 
 // CostAnalyzerProm holds the prometheus routines necessary to collect
 // service<->service traffic data.
 type CostAnalyzerProm struct {
-	promEndpoint  string
-	errChan       chan error
-	client        api.Client
-	localityMatch string
+	promEndpoint       string
+	errChan            chan error
+	client             api.Client
+	localityMatch      string
+	attemptsForwarding int
+	// attemptsThreshold is the number of retry attempts we will make to port-forward
+	attemptsThreshold int
 }
 
 // NewAnalyzerProm creates a prometheus client given the endpoint,
@@ -37,10 +41,12 @@ func NewAnalyzerProm(promEndpoint, cloud string) (*CostAnalyzerProm, error) {
 		regex = "^[a-z]+-[a-z]+-[a-z]\\d$"
 	}
 	return &CostAnalyzerProm{
-		promEndpoint:  promEndpoint,
-		errChan:       make(chan error),
-		client:        client,
-		localityMatch: regex,
+		promEndpoint:       promEndpoint,
+		errChan:            make(chan error),
+		client:             client,
+		localityMatch:      regex,
+		attemptsForwarding: 0,
+		attemptsThreshold:  1,
 	}, nil
 }
 
@@ -51,9 +57,15 @@ func (d *CostAnalyzerProm) PortForwardProm(promNamespace string) {
 	cmd := exec.Command("kubectl", "-n", promNamespace, "port-forward", "deployment/prometheus", "9990:9090")
 	o, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Printf("cannot port-forward to prometheus: %v %v", err, string(o))
-		d.errChan <- err
-		return
+		if strings.Contains(string(o), "address already in use") && d.attemptsForwarding < d.attemptsThreshold {
+			fmt.Printf("port-forward failed once, trying again...\n")
+			d.attemptsForwarding++
+			d.PortForwardProm(promNamespace)
+		} else {
+			fmt.Printf("cannot port-forward to prometheus: %v %v", err, string(o))
+			d.errChan <- err
+			return
+		}
 	}
 }
 
