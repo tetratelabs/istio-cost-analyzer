@@ -7,6 +7,7 @@ import (
 	"github.com/tetratelabs/istio-cost-analyzer/pkg"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/util/homedir"
+	"os"
 	"path/filepath"
 	"time"
 )
@@ -88,6 +89,13 @@ var analyzeCmd = &cobra.Command{
 }
 
 func init() {
+	defaultKube := ""
+	if os.Getenv("KUBECONFIG") == "" {
+		home := homedir.HomeDir()
+		defaultKube = filepath.Join(home, ".kube", "config")
+	} else {
+		defaultKube = os.Getenv("KUBECONFIG")
+	}
 	// setup/destroy need this
 	rootCmd.PersistentFlags().StringVar(&operatorName, "operatorName", "", "name of your istio operator. If not set, cost tool will use the first operator found in the istio-system namespace")
 	rootCmd.PersistentFlags().StringVar(&operatorNamespace, "operatorNamespace", "istio-system", "namespace of your istio operator")
@@ -100,7 +108,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&cloud, "cloud", "gcp", "aws/gcp/azure are provided by default. if nothing is set, gcp is used.")
 	rootCmd.PersistentFlags().StringVar(&analyzerNamespace, "analyzerNamespace", "istio-system", "namespace that the cost analyzer and associated resources lives in")
 	rootCmd.PersistentFlags().StringVar(&targetNamespace, "targetNamespace", "default", "namespace that the cost analyzer will analyze")
-	rootCmd.PersistentFlags().StringVar(&kubeconfig, "kubeconfig", filepath.Join(homedir.HomeDir(), ".kube", "config"), "path to kubeconfig file")
+	rootCmd.PersistentFlags().StringVar(&kubeconfig, "kubeconfig", defaultKube, "path to kubeconfig file")
 
 	destroyCmd.PersistentFlags().BoolVarP(&destroyOperator, "destroyOperator", "o", false, "if true, cost analyzer will destroy the istio operator config that it created")
 
