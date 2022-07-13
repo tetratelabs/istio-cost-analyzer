@@ -38,7 +38,7 @@ func NewAnalyzerProm(promEndpoint, cloud string) (*CostAnalyzerProm, error) {
 	// assume gcp
 	regex := "^[a-z]+-[a-z]+\\d-[a-z]$"
 	if cloud == "aws" {
-		regex = "^[a-z]+-[a-z]+-[a-z]\\d$"
+		regex = "^[a-z]+-[a-z]+-\\d$"
 	}
 	return &CostAnalyzerProm{
 		promEndpoint:       promEndpoint,
@@ -116,10 +116,12 @@ func (d *CostAnalyzerProm) GetCalls(since time.Duration) ([]*Call, error) {
 		// check if the locality is valid with regexp, if not, throw it out
 		// we do this because anyone can set labels on pods, and we don't want to
 		// count those.
-		if sourceMatch, _ := regexp.MatchString(d.localityMatch, string(v[i].Metric["destination_locality"])); !sourceMatch {
+		if destMatch, _ := regexp.MatchString(d.localityMatch, string(v[i].Metric["destination_locality"])); !destMatch {
+			fmt.Printf("skipping invalid destination locality: %v\n", v[i].Metric["destination_locality"])
 			continue
 		}
-		if destMatch, _ := regexp.MatchString(d.localityMatch, string(v[i].Metric["locality"])); !destMatch {
+		if sourceMatch, _ := regexp.MatchString(d.localityMatch, string(v[i].Metric["locality"])); !sourceMatch {
+			fmt.Printf("skipping invalid source locality: %v\n", v[i].Metric["locality"])
 			continue
 		}
 
