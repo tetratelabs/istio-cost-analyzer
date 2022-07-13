@@ -10,13 +10,7 @@ import (
 )
 
 /*
-PLEASE READ:
-
-This is a hacky tool that converts gcp pricing with some structure to
-a flat pricing scheme. PLEASE, PLEASE, PLEASE do not run this in production.
-It will break.
-
-Thanks
+Use at your own risk.
 */
 
 var (
