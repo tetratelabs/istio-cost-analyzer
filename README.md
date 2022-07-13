@@ -16,46 +16,24 @@ To install the `istio-cost-analyzer` binary:
 go install github.com/tetratelabs/istio-cost-analyzer@latest
 ```
 
-### Creating `destination_locality` label
+### Setup
 
-You must create the `destination_locality` label for the cost tool to read from.
+The setup command does a few things:
+- Edits Istio Operator config to add custom prometheus metrics (a `destination_locality` label on an Istio metric).
+- Creates a Mutating Webhook that gets called when a new deployment is created. This mutating webhook runs in a pod and has associated RBAC permissions, Services, etc.
+- Labels existing pods & deployments in said `--targetNamespace`.
 
 You can either run the following command and have a webhook handle everything all existing Deployments and all Deployments created in the future:
 
 ```
-istio-cost-analyzer setup --targetNamespace <ns>
+istio-cost-analyzer setup --targetNamespace <ns> --cloud <cloud>
 ```
 
-Set the `targetNamespace` to the namespace you want to analyze. Default is `default`.
-
-If you want the analyzer config to not exist in the `istio-system` namespace (default), you can set the `--analyzerNamespace` flag.
-
-The setup command will also add a locality label to every pod in your `targetNamespace`, which is necessary for the tool.
-
-
-### Operator Setup
-
-Add the following to your Istio Operator:
-
-```yaml
-spec:
-  values:
-    telemetry:
-      v2:
-        prometheus:
-          configOverride:
-            inboundSidecar:
-              metrics:
-                - name: request_bytes
-                  dimensions:
-                    destination_locality: downstream_peer.labels['locality'].value
-            outboundSidecar:
-              metrics:
-                - name: request_bytes
-                  dimensions:
-                    destination_locality: upstream_peer.labels['locality'].value
-```
-
+| Flag                |                                       Description                                       |  Default Value |
+|:--------------------|:---------------------------------------------------------------------------------------:|---------------:|
+| targetNamespace     |                  Namespace which the cost analyzer will watch/analyze                   |      `default` |
+| cloud               |        Cloud on which your cluster is running (node info varies cloud to cloud)         |          `gcp` |
+| analyzerNamespace   | Namespace in which cost analyzer config will exist (you usually don't need to set this) | `istio-system` |
 
 
 ## Running
@@ -63,19 +41,16 @@ spec:
 Run:
 
 ```
-istio-cost-analyzer analyze --targetNamespace <analysis namespace>
+istio-cost-analyzer analyze
 ```
 
-This assumes your cluster is on GCP. To change this to the two options of AWS and GCP, run as follows:
-```
-istio-cost-analyzer analyze --targetNamespace <analysis namespace> --cloud aws
-```
-To point the cost analyzer to your own pricing sheet, run as follows (takes local files and urls):
-```
-istio-cost-analyzer analyze --pricePath <path to .json> --targetNamespace <analysis namespace>
-```
+| Flag                |                                                                           Description                                                                           |   Default Value |
+|:--------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------:|----------------:|
+| cloud               |                              Cloud on which your cluster is running (node info varies cloud to cloud). Options are `gcp` or `aws`.                              |           `gcp` |
+| prometheusNamespace |                                        Namespace in which the prometheus pod exists (you usually don't need to set this)                                        |  `istio-system` |
+| pricePath           | For non-standard aws/gcp rates (on-prem, negotiated rates). If you set this, you don't need to set `cloud`. See `/pricing` (you usually don't need to set this) |            None |
+| details             |                              Extended table view that shows both destination and source workload/locality, instead of just source.                              |         `false` |
 
-The flag `--targetNamespace` needs to match the `--targetNamespace` you set in the `setup` command.
 
 The output should look like (without `--details`): 
 
@@ -110,3 +85,5 @@ istio-cost-analyzer destroy
 ```
 
 You must set the `--analyzerNamespace` flag if you set it in the `setup` command.
+
+You must also edit your Istio Operator config to remove the custom prometheus metrics. (you can use `-o` to do that here, but it's unstable)

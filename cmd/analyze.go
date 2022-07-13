@@ -107,7 +107,7 @@ func init() {
 
 	rootCmd.PersistentFlags().StringVar(&cloud, "cloud", "gcp", "aws/gcp/azure are provided by default. if nothing is set, gcp is used.")
 	rootCmd.PersistentFlags().StringVar(&analyzerNamespace, "analyzerNamespace", "istio-system", "namespace that the cost analyzer and associated resources lives in")
-	rootCmd.PersistentFlags().StringVar(&targetNamespace, "targetNamespace", "default", "namespace that the cost analyzer will analyze")
+	webhookSetupCmd.PersistentFlags().StringVar(&targetNamespace, "targetNamespace", "default", "namespace that the cost analyzer will analyze")
 	rootCmd.PersistentFlags().StringVar(&kubeconfig, "kubeconfig", defaultKube, "path to kubeconfig file")
 
 	destroyCmd.PersistentFlags().BoolVarP(&destroyOperator, "destroyOperator", "o", false, "if true, cost analyzer will destroy the istio operator config that it created")
