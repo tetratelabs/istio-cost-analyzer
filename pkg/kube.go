@@ -214,29 +214,33 @@ func (k *KubeClient) DeleteOperatorConfig(opName, opNs string) error {
 func normalizeOperator(res *unstructured.Unstructured) (*unstructured.Unstructured, bool) {
 	// lord forgive me for I have sinned
 	// theres probably a better way to figure this out with JSONPatch but i'm lazy
+	// todo you fucking forgot telemetry v2 proemetheus
 	if v := res.Object["spec"].(map[string]interface{})["values"]; v == nil {
 		res.Object["spec"].(map[string]interface{})["values"] = make(map[string]interface{})
 	}
 	if v := res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"]; v == nil {
 		res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"] = make(map[string]interface{})
 	}
-	if v := res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["prometheus"]; v == nil {
-		res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["prometheus"] = make(map[string]interface{})
+	if v := res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["v2"]; v == nil {
+		res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["v2"] = make(map[string]interface{})
 	}
-	if v := res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["prometheus"].(map[string]interface{})["configOverride"]; v == nil {
-		res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["prometheus"].(map[string]interface{})["configOverride"] = make(map[string]interface{})
+	if v := res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["v2"].(map[string]interface{})["prometheus"]; v == nil {
+		res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["v2"].(map[string]interface{})["prometheus"] = make(map[string]interface{})
 	}
-	if v := res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["prometheus"].(map[string]interface{})["configOverride"].(map[string]interface{})["inboundSidecar"]; v == nil {
-		res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["prometheus"].(map[string]interface{})["configOverride"].(map[string]interface{})["inboundSidecar"] = make(map[string]interface{})
+	if v := res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["v2"].(map[string]interface{})["prometheus"].(map[string]interface{})["configOverride"]; v == nil {
+		res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["v2"].(map[string]interface{})["prometheus"].(map[string]interface{})["configOverride"] = make(map[string]interface{})
 	}
-	inbound := res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["prometheus"].(map[string]interface{})["configOverride"].(map[string]interface{})["inboundSidecar"].(map[string]interface{})["metrics"]
+	if v := res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["v2"].(map[string]interface{})["prometheus"].(map[string]interface{})["configOverride"].(map[string]interface{})["inboundSidecar"]; v == nil {
+		res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["v2"].(map[string]interface{})["prometheus"].(map[string]interface{})["configOverride"].(map[string]interface{})["inboundSidecar"] = make(map[string]interface{})
+	}
+	inbound := res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["v2"].(map[string]interface{})["prometheus"].(map[string]interface{})["configOverride"].(map[string]interface{})["inboundSidecar"].(map[string]interface{})["metrics"]
 	if inbound == nil {
 		inbound = make([]interface{}, 0)
 	}
-	if v := res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["prometheus"].(map[string]interface{})["configOverride"].(map[string]interface{})["outboundSidecar"]; v == nil {
-		res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["prometheus"].(map[string]interface{})["configOverride"].(map[string]interface{})["outboundSidecar"] = make(map[string]interface{})
+	if v := res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["v2"].(map[string]interface{})["prometheus"].(map[string]interface{})["configOverride"].(map[string]interface{})["outboundSidecar"]; v == nil {
+		res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["v2"].(map[string]interface{})["prometheus"].(map[string]interface{})["configOverride"].(map[string]interface{})["outboundSidecar"] = make(map[string]interface{})
 	}
-	outbound := res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["prometheus"].(map[string]interface{})["configOverride"].(map[string]interface{})["outboundSidecar"].(map[string]interface{})["metrics"]
+	outbound := res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["v2"].(map[string]interface{})["prometheus"].(map[string]interface{})["configOverride"].(map[string]interface{})["outboundSidecar"].(map[string]interface{})["metrics"]
 	if outbound == nil {
 		outbound = make([]interface{}, 0)
 	}
@@ -287,8 +291,8 @@ func normalizeOperator(res *unstructured.Unstructured) (*unstructured.Unstructur
 		})
 	}
 
-	res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["prometheus"].(map[string]interface{})["configOverride"].(map[string]interface{})["inboundSidecar"].(map[string]interface{})["metrics"] = inbound
-	res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["prometheus"].(map[string]interface{})["configOverride"].(map[string]interface{})["outboundSidecar"].(map[string]interface{})["metrics"] = outbound
+	res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["v2"].(map[string]interface{})["prometheus"].(map[string]interface{})["configOverride"].(map[string]interface{})["inboundSidecar"].(map[string]interface{})["metrics"] = inbound
+	res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["v2"].(map[string]interface{})["prometheus"].(map[string]interface{})["configOverride"].(map[string]interface{})["outboundSidecar"].(map[string]interface{})["metrics"] = outbound
 	return res, true
 }
 

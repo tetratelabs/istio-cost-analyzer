@@ -103,7 +103,7 @@ func init() {
 	analyzeCmd.PersistentFlags().StringVar(&pricePath, "pricePath", "", "if custom egress rates are provided, dapani will use the rates in this file.")
 	analyzeCmd.PersistentFlags().StringVar(&queryBefore, "queryBefore", "0s", "if provided a time duration (go format), dapani will only use data from that much time ago and before.")
 	analyzeCmd.PersistentFlags().BoolVar(&details, "details", false, "if true, tool will provide a more detailed view of egress costs, including both destination and source")
-	analyzeCmd.PersistentFlags().StringVar(&promNs, "promNamespace", analyzerNamespace, "promNs that the prometheus pod lives in, if different from analyzerNamespace")
+	analyzeCmd.PersistentFlags().StringVar(&promNs, "promNamespace", "istio-system", "promNs that the prometheus pod lives in, if different from analyzerNamespace")
 
 	rootCmd.PersistentFlags().StringVar(&cloud, "cloud", "gcp", "aws/gcp/azure are provided by default. if nothing is set, gcp is used.")
 	rootCmd.PersistentFlags().StringVar(&analyzerNamespace, "analyzerNamespace", "istio-system", "namespace that the cost analyzer and associated resources lives in")
