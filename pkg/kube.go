@@ -304,12 +304,15 @@ func denormalizeOperator(res *unstructured.Unstructured) *unstructured.Unstructu
 	if v := res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"]; v == nil {
 		return res
 	}
-	if v := res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["prometheus"]; v == nil {
+	if v := res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["v2"]; v == nil {
 		return res
 	}
-	if v := res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["prometheus"].(map[string]interface{})["configOverride"]; v == nil {
+	if v := res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["v2"].(map[string]interface{})["prometheus"]; v == nil {
 		return res
 	}
-	res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["prometheus"].(map[string]interface{})["configOverride"] = make(map[string]interface{})
+	if v := res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["v2"].(map[string]interface{})["prometheus"].(map[string]interface{})["configOverride"]; v == nil {
+		return res
+	}
+	res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["v2"].(map[string]interface{})["prometheus"].(map[string]interface{})["configOverride"] = make(map[string]interface{})
 	return res
 }

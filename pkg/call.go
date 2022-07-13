@@ -37,7 +37,7 @@ func PrintCostTable(calls []*Call, total float64, details bool) {
 		return calls[i].CallCost > calls[j].CallCost
 	})
 	table := tablewriter.NewWriter(os.Stdout)
-	headers := []string{"Source Workload", "Source Locality", "Destination Workload", "Destination Locality", "Transferred (MB)", "Cost"}
+	headers := []string{"Source Service", "Source Locality", "Destination Service", "Destination Locality", "Transferred (MB)", "Cost"}
 	table.SetHeader(headers)
 	for _, v := range calls {
 		values := []string{v.FromWorkload, v.From, v.ToWorkload, v.To, fmt.Sprintf("%f", float64(v.CallSize)/math.Pow(10, 6)), transformCost(v.CallCost)}
