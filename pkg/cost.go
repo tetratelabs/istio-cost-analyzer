@@ -58,6 +58,7 @@ func NewCostAnalysis(priceSheetLocation string) (*CostAnalysis, error) {
 // todo should we return a multierror?
 func (c *CostAnalysis) CalculateEgress(calls []*Call) (float64, error) {
 	totalCost := 0.00
+	fmt.Printf("calculating egress costs for %v call links\n", len(calls))
 	for i, v := range calls {
 		rate, ok := c.pricing[v.From][v.To]
 		if !ok {
