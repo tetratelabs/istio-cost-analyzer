@@ -70,7 +70,7 @@ func printMinifiedCostTable(calls []*Call) {
 	})
 	// print
 	table := tablewriter.NewWriter(os.Stdout)
-	headers := []string{"Source Workload", "Source Locality", "Cost"}
+	headers := []string{"Source Service", "Source Locality", "Cost"}
 	table.SetHeader(headers)
 	for _, v := range callSlice {
 		values := []string{v.FromWorkload, v.From, transformCost(v.CallCost)}

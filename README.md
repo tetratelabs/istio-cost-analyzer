@@ -26,14 +26,14 @@ The setup command does a few things:
 You can either run the following command and have a webhook handle everything all existing Deployments and all Deployments created in the future:
 
 ```
-istio-cost-analyzer setup --targetNamespace <ns> --cloud <cloud>
+istio-cost-analyzer setup --targetNamespace <ns>
 ```
 
-| Flag                |                                       Description                                       |  Default Value |
-|:--------------------|:---------------------------------------------------------------------------------------:|---------------:|
-| targetNamespace     |                  Namespace which the cost analyzer will watch/analyze                   |      `default` |
-| cloud               |        Cloud on which your cluster is running (node info varies cloud to cloud)         |          `gcp` |
-| analyzerNamespace   | Namespace in which cost analyzer config will exist (you usually don't need to set this) | `istio-system` |
+| Flag                |                                             Description                                             |           Default Value |
+|:--------------------|:---------------------------------------------------------------------------------------------------:|------------------------:|
+| targetNamespace     |                        Namespace which the cost analyzer will watch/analyze                         |               `default` |
+| cloud               | Cloud on which your cluster is running (node info varies cloud to cloud -- inferred from Node info) | Inferred from Node info |
+| analyzerNamespace   |       Namespace in which cost analyzer config will exist (you usually don't need to set this)       |          `istio-system` |
 
 
 ## Running
@@ -44,12 +44,12 @@ Run:
 istio-cost-analyzer analyze
 ```
 
-| Flag                |                                                                           Description                                                                           |   Default Value |
-|:--------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------:|----------------:|
-| cloud               |                              Cloud on which your cluster is running (node info varies cloud to cloud). Options are `gcp` or `aws`.                              |           `gcp` |
-| prometheusNamespace |                                        Namespace in which the prometheus pod exists (you usually don't need to set this)                                        |  `istio-system` |
-| pricePath           | For non-standard aws/gcp rates (on-prem, negotiated rates). If you set this, you don't need to set `cloud`. See `/pricing` (you usually don't need to set this) |            None |
-| details             |                              Extended table view that shows both destination and source workload/locality, instead of just source.                              |         `false` |
+| Flag                |                                                                           Description                                                                           |           Default Value |
+|:--------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------:|------------------------:|
+| cloud               |                              Cloud on which your cluster is running (node info varies cloud to cloud). Options are `gcp` or `aws`.                              | Inferred from Node info |
+| prometheusNamespace |                                        Namespace in which the prometheus pod exists (you usually don't need to set this)                                        |          `istio-system` |
+| pricePath           | For non-standard aws/gcp rates (on-prem, negotiated rates). If you set this, you don't need to set `cloud`. See `/pricing` (you usually don't need to set this) |                    None |
+| details             |                              Extended table view that shows both destination and source workload/locality, instead of just source.                              |                 `false` |
 
 
 The output should look like (without `--details`): 
