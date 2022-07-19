@@ -9,6 +9,7 @@ import (
 	"k8s.io/client-go/util/homedir"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -44,16 +45,25 @@ var analyzeCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
+		// if a custom price path isn't provided, use the default price path for the cloud
+		// the cluster is on.
 		if pricePath == "" {
-			if cloud == "gcp" {
+			if cloud == "" {
+				cloud = string(kubeClient.InferCloud())
+			}
+			cloud = strings.ToUpper(cloud)
+			if pkg.Cloud(cloud).IsGCP() {
 				pricePath = gcpPricingLocation
-			} else if cloud == "aws" {
+			} else if pkg.Cloud(cloud).IsAWS() {
 				pricePath = awsPricingLocation
 			} else {
-				fmt.Println("when no price path is provided, the only supported clouds are gcp and aws.")
+				// we don't have a price path or cloud, so fail
+				fmt.Println("when no price path is provided, the only supported clouds are gcp and aws. couldn't infer cloud info.")
 				return errors.New("provide different cloud")
 			}
+			fmt.Printf("found cloud: %s\n", cloud)
 		}
+		fmt.Printf("using pricing file: %s\n", pricePath)
 		// initialize analyzer
 		cost, err := pkg.NewCostAnalysis(pricePath)
 		if err != nil {
@@ -105,7 +115,7 @@ func init() {
 	analyzeCmd.PersistentFlags().BoolVar(&details, "details", false, "if true, tool will provide a more detailed view of egress costs, including both destination and source")
 	analyzeCmd.PersistentFlags().StringVar(&promNs, "promNamespace", "istio-system", "promNs that the prometheus pod lives in, if different from analyzerNamespace")
 
-	rootCmd.PersistentFlags().StringVar(&cloud, "cloud", "gcp", "aws/gcp/azure are provided by default. if nothing is set, gcp is used.")
+	rootCmd.PersistentFlags().StringVar(&cloud, "cloud", "", "aws/gcp/azure are provided by default. if nothing is set, cloud info is inferred.")
 	rootCmd.PersistentFlags().StringVar(&analyzerNamespace, "analyzerNamespace", "istio-system", "namespace that the cost analyzer and associated resources lives in")
 	webhookSetupCmd.PersistentFlags().StringVar(&targetNamespace, "targetNamespace", "default", "namespace that the cost analyzer will analyze")
 	rootCmd.PersistentFlags().StringVar(&kubeconfig, "kubeconfig", defaultKube, "path to kubeconfig file")
