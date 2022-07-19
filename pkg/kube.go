@@ -31,6 +31,22 @@ type KubeClient struct {
 	kubeconfig string
 }
 
+type Cloud string
+
+const (
+	AWS     Cloud = "AWS"
+	GCP     Cloud = "GCP"
+	Unknown Cloud = "Unknown"
+)
+
+func (c Cloud) IsAWS() bool {
+	return c == AWS
+}
+
+func (c Cloud) IsGCP() bool {
+	return c == GCP
+}
+
 // NewAnalyzerKube creates a clientset using the kubeconfig found in the home directory.
 // todo make kubeconfig a settable parameter in analyzer.go
 func NewAnalyzerKube(kubeconfig string) *KubeClient {
@@ -116,6 +132,25 @@ func (k *KubeClient) getNodeLabel(name, label string) (string, error) {
 		return "", err
 	}
 	return node.Labels[label], nil
+}
+
+func (k *KubeClient) InferCloud() Cloud {
+	nodes, err := k.clientSet.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		fmt.Printf("error in getting nodes: %v\n", err)
+		return ""
+	}
+	if len(nodes.Items) == 0 {
+		return ""
+	}
+	node := nodes.Items[0]
+	if strings.Contains(node.Status.NodeInfo.KubeletVersion, "eks") {
+		return AWS
+	}
+	if strings.HasPrefix(node.Spec.ProviderID, "gce") && strings.Contains(node.Status.NodeInfo.KubeletVersion, "gke") {
+		return GCP
+	}
+	return Unknown
 }
 
 // CreateService creates a service in the given namespace. Returns the service, the error, and
