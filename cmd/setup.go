@@ -9,6 +9,7 @@ import (
 	v13 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8Yaml "k8s.io/apimachinery/pkg/util/yaml"
+	"strings"
 )
 
 var costAnalyzerSA = &v12.ServiceAccount{
@@ -160,6 +161,9 @@ spec:
 			cmd.PrintErrf("unable to decode deployment: %v", err)
 			return err
 		}
+		if analyzeAll {
+			targetNamespace = ""
+		}
 		depl.Spec.Template.Spec.Containers[0].Env = []v12.EnvVar{{
 			Name:  "CLOUD",
 			Value: cloud,
@@ -195,6 +199,15 @@ spec:
 				cmd.Printf("deployment %v already exists\n", depl.Name)
 			} else {
 				cmd.Printf("deployment %v created\n", depl.Name)
+			}
+		}
+
+		// label namespaces with cost-analyzer-analysis-enabled=true
+		namespaces := strings.Split(targetNamespace, ",")
+		for _, namespace := range namespaces {
+			if err = kubeClient.LabelNamespace(namespace, "cost-analyzer-analysis-enabled", "true"); err != nil {
+				cmd.PrintErrf("unable to label namespace %v: %v", namespace, err)
+				return err
 			}
 		}
 

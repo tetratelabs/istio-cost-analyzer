@@ -88,6 +88,11 @@ func main() {
 			FailurePolicy:           &fail,
 			SideEffects:             &sf,
 			AdmissionReviewVersions: []string{"v1"},
+			NamespaceSelector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					"cost-analyzer-analysis-enabled": "true",
+				},
+			},
 		}},
 	}
 

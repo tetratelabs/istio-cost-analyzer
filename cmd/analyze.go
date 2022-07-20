@@ -23,6 +23,7 @@ var (
 	promNs            string
 	analyzerNamespace string
 	targetNamespace   string
+	analyzeAll        bool
 	operatorName      string
 	operatorNamespace string
 	kubeconfig        string
@@ -121,6 +122,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&kubeconfig, "kubeconfig", defaultKube, "path to kubeconfig file")
 
 	destroyCmd.PersistentFlags().BoolVarP(&destroyOperator, "destroyOperator", "o", false, "if true, cost analyzer will destroy the istio operator config that it created")
+	webhookSetupCmd.PersistentFlags().BoolVarP(&analyzeAll, "analyzeAll", "a", false, "if true, cost analyzer will analyze all namespaces in the cluster")
 
 	rootCmd.AddCommand(analyzeCmd)
 	rootCmd.AddCommand(webhookSetupCmd)

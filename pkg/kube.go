@@ -11,6 +11,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -193,6 +194,11 @@ func (k *KubeClient) CreateClusterRole(clusterRole *v13.ClusterRole) (*v13.Clust
 		return clusterRole, nil, true
 	}
 	return cr, err, false
+}
+
+func (k *KubeClient) LabelNamespace(ns, key, value string) error {
+	_, err := k.clientSet.CoreV1().Namespaces().Patch(context.TODO(), ns, types.MergePatchType, []byte(fmt.Sprintf(`{"metadata":{"labels":{"%v":"%v"}}}`, key, value)), metav1.PatchOptions{})
+	return err
 }
 
 func (k *KubeClient) Client() kubernetes.Interface {
