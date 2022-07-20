@@ -16,6 +16,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	admissionv1 "k8s.io/api/admission/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -29,7 +30,8 @@ var (
 	logger    = log.New(os.Stdout, "", log.LstdFlags)
 	clientset *kubernetes.Clientset
 	cloud     = os.Getenv("CLOUD")
-	namespace = os.Getenv("NAMESPACE")
+	//namespace  = os.Getenv("NAMESPACE")
+	namespaces = strings.Split(os.Getenv("NAMESPACE"), ",")
 )
 
 func main() {
@@ -37,8 +39,8 @@ func main() {
 	if cloud == "" {
 		cloud = "gcp"
 	}
-	if namespace == "" {
-		namespace = "default"
+	if len(namespaces) == 0 {
+		namespaces = []string{"default"}
 	}
 	tlsCert := flag.String("tls-cert", "", "Certificate for TLS")
 	tlsKey := flag.String("tls-key", "", "Private key file for TLS")
@@ -70,24 +72,26 @@ func main() {
 // annotateExistingDeployments annotates existing deployments with stats tags.
 func annotateExistingDeployments() error {
 	log.Println("fetching deployments...")
-	depl, err := clientset.AppsV1().Deployments(namespace).List(context.TODO(), metav1.ListOptions{})
-	if err != nil {
-		return err
-	}
-	log.Printf("annotating %v deployments\n", len(depl.Items))
-	for _, d := range depl.Items {
-		if d.Spec.Template.Annotations == nil {
-			d.Spec.Template.Annotations = make(map[string]string)
-		}
-		if v, ok := d.Spec.Template.Annotations["sidecar.istio.io/extraStatTags"]; ok && v == "destination_locality" {
-			log.Printf("skipping deployment %v\n", d.Name)
-			continue
-		}
-		log.Printf("annotating deployment %v\n", d.Name)
-		d.Spec.Template.Annotations["sidecar.istio.io/extraStatTags"] = "destination_locality"
-		_, err = clientset.AppsV1().Deployments(namespace).Update(context.TODO(), &d, metav1.UpdateOptions{})
+	for _, ns := range namespaces {
+		depl, err := clientset.AppsV1().Deployments(ns).List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
-			logger.Printf("error in updating deployment, skipping...: %v\n", err)
+			return err
+		}
+		log.Printf("annotating %v deployments in %v\n", len(depl.Items), ns)
+		for _, d := range depl.Items {
+			if d.Spec.Template.Annotations == nil {
+				d.Spec.Template.Annotations = make(map[string]string)
+			}
+			if v, ok := d.Spec.Template.Annotations["sidecar.istio.io/extraStatTags"]; ok && v == "destination_locality" {
+				log.Printf("skipping deployment %v/%v\n", d.Name, d.Namespace)
+				continue
+			}
+			log.Printf("annotating deployment %v/%v\n", d.Name, d.Namespace)
+			d.Spec.Template.Annotations["sidecar.istio.io/extraStatTags"] = "destination_locality"
+			_, err = clientset.AppsV1().Deployments(ns).Update(context.TODO(), &d, metav1.UpdateOptions{})
+			if err != nil {
+				logger.Printf("error in updating deployment, skipping...: %v\n", err)
+			}
 		}
 	}
 	return nil
@@ -95,41 +99,45 @@ func annotateExistingDeployments() error {
 
 // watchAndLabelPod watches for pod creation and labels the pod with the node locality.
 func watchAndLabelPods(stopCh <-chan struct{}) {
-	log.Println("labeling pods...")
-	factory := informers.NewSharedInformerFactoryWithOptions(clientset, 0, informers.WithNamespace(namespace))
-	// Get pods from informer
-	informer := factory.Core().V1().Pods().Informer()
+	log.Printf("labeling pods in namespaces %v...", namespaces)
+	informerIndex := map[string]cache.SharedInformer{}
+	for _, ns := range namespaces {
+		factory := informers.NewSharedInformerFactoryWithOptions(clientset, 0, informers.WithNamespace(ns))
+		informerIndex[ns] = factory.Core().V1().Pods().Informer()
+	}
+	for ns, informer := range informerIndex {
+		informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+			AddFunc: func(obj interface{}) {
+				pod := obj.(*corev1.Pod)
+				log.Printf("updating pod %v\n", pod.Name)
+				if pod.Namespace != ns {
+					return
+				}
+				// Get the node locality
+				locality, err := getNodeLocality(pod.Spec.NodeName, cloud)
+				if err != nil {
+					log.Printf("error in getting node locality: %v\n", err)
+					return
+				}
+				// Label the pod with the node locality
+				pod.ObjectMeta.Labels["locality"] = locality
+				// annotate the pod with destination_locality tag
+				if pod.Annotations == nil {
+					pod.Annotations = make(map[string]string)
+				}
+				pod.Annotations["sidecar.istio.io/extraStatTags"] = "destination_locality"
+				// Update the pod
+				_, err = clientset.CoreV1().Pods(pod.Namespace).Update(context.TODO(), pod, metav1.UpdateOptions{})
+				if err != nil {
+					log.Printf("error in updating pod: %v\n", err)
+					return
+				}
+				log.Printf("Pod %v updated\n", pod.Name)
+			},
+		})
+		informer.Run(stopCh)
+	}
 	defer runtime2.HandleCrash()
-	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: func(obj interface{}) {
-			pod := obj.(*corev1.Pod)
-			log.Printf("updating pod %v\n", pod.Name)
-			if pod.Namespace != namespace {
-				return
-			}
-			// Get the node locality
-			locality, err := getNodeLocality(pod.Spec.NodeName, cloud)
-			if err != nil {
-				log.Printf("error in getting node locality: %v\n", err)
-				return
-			}
-			// Label the pod with the node locality
-			pod.ObjectMeta.Labels["locality"] = locality
-			// annotate the pod with destination_locality tag
-			if pod.Annotations == nil {
-				pod.Annotations = make(map[string]string)
-			}
-			pod.Annotations["sidecar.istio.io/extraStatTags"] = "destination_locality"
-			// Update the pod
-			_, err = clientset.CoreV1().Pods(pod.Namespace).Update(context.TODO(), pod, metav1.UpdateOptions{})
-			if err != nil {
-				log.Printf("error in updating pod: %v\n", err)
-				return
-			}
-			log.Printf("Pod %v updated\n", pod.Name)
-		},
-	})
-	informer.Run(stopCh)
 }
 
 var deserializer = codecs.UniversalDeserializer()
