@@ -29,11 +29,12 @@ You can either run the following command and have a webhook handle everything al
 istio-cost-analyzer setup --targetNamespace <ns>
 ```
 
-| Flag                |                                             Description                                             |           Default Value |
-|:--------------------|:---------------------------------------------------------------------------------------------------:|------------------------:|
-| targetNamespace     |                        Namespace which the cost analyzer will watch/analyze                         |               `default` |
-| cloud               | Cloud on which your cluster is running (node info varies cloud to cloud -- inferred from Node info) | Inferred from Node info |
-| analyzerNamespace   |       Namespace in which cost analyzer config will exist (you usually don't need to set this)       |          `istio-system` |
+| Flag              |                                                      Description                                                      |           Default Value |
+|:------------------|:---------------------------------------------------------------------------------------------------------------------:|------------------------:|
+| targetNamespace   |                                 Namespace which the cost analyzer will watch/analyze                                  |               `default` |
+| cloud             |          Cloud on which your cluster is running (node info varies cloud to cloud -- inferred from Node info)          | Inferred from Node info |
+| analyzerNamespace |                Namespace in which cost analyzer config will exist (you usually don't need to set this)                |          `istio-system` |
+| analyzeAll (`-a`) | Adding this flag will cause the cost analyzer to analyze all namespaces. Don't set tihs if you set `targetNamespace`. |                 `false` |
 
 
 ## Running
