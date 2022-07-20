@@ -39,9 +39,6 @@ func main() {
 	if cloud == "" {
 		cloud = "gcp"
 	}
-	if len(namespaces) == 0 {
-		namespaces = []string{"default"}
-	}
 	tlsCert := flag.String("tls-cert", "", "Certificate for TLS")
 	tlsKey := flag.String("tls-key", "", "Private key file for TLS")
 	port := flag.Int("port", 443, "Port to listen on for HTTPS traffic")
@@ -97,43 +94,45 @@ func annotateExistingDeployments() error {
 	return nil
 }
 
+func addPodEventHandler(obj interface{}) {
+	pod := obj.(*corev1.Pod)
+	log.Printf("updating pod %v\n", pod.Name)
+	// Get the node locality
+	locality, err := getNodeLocality(pod.Spec.NodeName, cloud)
+	if err != nil {
+		log.Printf("error in getting node locality: %v\n", err)
+		return
+	}
+	// Label the pod with the node locality
+	pod.ObjectMeta.Labels["locality"] = locality
+	// annotate the pod with destination_locality tag
+	if pod.Annotations == nil {
+		pod.Annotations = make(map[string]string)
+	}
+	pod.Annotations["sidecar.istio.io/extraStatTags"] = "destination_locality"
+	// Update the pod
+	_, err = clientset.CoreV1().Pods(pod.Namespace).Update(context.TODO(), pod, metav1.UpdateOptions{})
+	if err != nil {
+		log.Printf("error in updating pod: %v\n", err)
+		return
+	}
+	log.Printf("Pod %v updated\n", pod.Name)
+}
+
 // watchAndLabelPod watches for pod creation and labels the pod with the node locality.
 func watchAndLabelPods(stopCh <-chan struct{}) {
 	log.Printf("labeling pods in namespaces %v...", namespaces)
 	informerIndex := map[string]cache.SharedInformer{}
+	if len(namespaces) == 0 {
+		informerIndex["_"] = informers.NewSharedInformerFactory(clientset, 0).Core().V1().Pods().Informer()
+	}
 	for _, ns := range namespaces {
 		factory := informers.NewSharedInformerFactoryWithOptions(clientset, 0, informers.WithNamespace(ns))
 		informerIndex[ns] = factory.Core().V1().Pods().Informer()
 	}
-	for ns, informer := range informerIndex {
+	for _, informer := range informerIndex {
 		informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
-			AddFunc: func(obj interface{}) {
-				pod := obj.(*corev1.Pod)
-				log.Printf("updating pod %v\n", pod.Name)
-				if pod.Namespace != ns {
-					return
-				}
-				// Get the node locality
-				locality, err := getNodeLocality(pod.Spec.NodeName, cloud)
-				if err != nil {
-					log.Printf("error in getting node locality: %v\n", err)
-					return
-				}
-				// Label the pod with the node locality
-				pod.ObjectMeta.Labels["locality"] = locality
-				// annotate the pod with destination_locality tag
-				if pod.Annotations == nil {
-					pod.Annotations = make(map[string]string)
-				}
-				pod.Annotations["sidecar.istio.io/extraStatTags"] = "destination_locality"
-				// Update the pod
-				_, err = clientset.CoreV1().Pods(pod.Namespace).Update(context.TODO(), pod, metav1.UpdateOptions{})
-				if err != nil {
-					log.Printf("error in updating pod: %v\n", err)
-					return
-				}
-				log.Printf("Pod %v updated\n", pod.Name)
-			},
+			AddFunc: addPodEventHandler,
 		})
 		informer.Run(stopCh)
 	}
