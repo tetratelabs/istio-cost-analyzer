@@ -71,6 +71,7 @@ func main() {
 	localities := make([]string, 0)
 	for k, v := range gcpRegions {
 		zones := []rune(v)
+		// nolint
 		for _, z := range zones {
 			locality := k + "-" + string(z)
 			localities = append(localities, locality)

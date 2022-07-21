@@ -1,3 +1,17 @@
+// Copyright 2022 Tetrate
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package pkg
 
 import (
@@ -106,7 +120,8 @@ func (k *KubeClient) TransformLocalityCalls(rawCalls []*Call) ([]*Call, error) {
 	return calls, nil
 }
 
-// getPodNode gets the node associated with a given pod name in the default namespece.
+// getPodNode gets the node associated with a given pod name in the default namespace.
+// nolint
 func (k *KubeClient) getPodNode(name, namespace string) (string, error) {
 	pod, err := k.clientSet.CoreV1().Pods(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
@@ -117,6 +132,7 @@ func (k *KubeClient) getPodNode(name, namespace string) (string, error) {
 }
 
 // getNodeLocality gets the locality given by topology.kubernetes.io.
+// nolint
 func (k *KubeClient) getNodeLocality(name, cloud string) (string, error) {
 	// if we are on AWS, we want to just get region, because availability zones
 	// are not supported yet.
@@ -126,6 +142,7 @@ func (k *KubeClient) getNodeLocality(name, cloud string) (string, error) {
 	return k.getNodeLabel(name, "topology.kubernetes.io/zone")
 }
 
+// nolint
 func (k *KubeClient) getNodeLabel(name, label string) (string, error) {
 	node, err := k.clientSet.CoreV1().Nodes().Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
