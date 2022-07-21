@@ -5,7 +5,7 @@ vendor
 .DS_Store
 *.swp
 *.code-workspace
-
+.cache
 *.proto-descriptor
 *-packr.go
 
@@ -17,7 +17,7 @@ vendor
 *.tfstate
 *.tfstate.*
 *.tfvars
-
+.build
 # kubeconfig files
 kubeconfig-*
 
