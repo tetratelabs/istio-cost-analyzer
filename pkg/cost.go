@@ -55,7 +55,6 @@ func NewCostAnalysis(priceSheetLocation string) (*CostAnalysis, error) {
 // in the CostAnalysis object. It stores the individual call prices in the calls object,
 // along with returning a total cost as a float64. If an entry in calls doesn't correspond to
 // the actual pricing structure, the function just skips that entry, instead of returning an error.
-// todo should we return a multierror?
 func (c *CostAnalysis) CalculateEgress(calls []*Call) (float64, error) {
 	totalCost := 0.00
 	fmt.Printf("calculating egress costs for %v call links\n", len(calls))

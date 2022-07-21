@@ -49,9 +49,6 @@ func PrintCostTable(calls []*Call, total float64, details bool) {
 }
 
 func printMinifiedCostTable(calls []*Call) {
-	// todo should we group by source & locality or just source
-	// 	foo in us-west1-b might be treated diff from foo in us-west1-a
-	//  right now we group by just source, so all localities are grouped in the same row
 	callBySource := make(map[string]Call)
 	for i, v := range calls {
 		if srcCall, ok := callBySource[v.FromWorkload]; !ok {
