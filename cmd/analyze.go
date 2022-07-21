@@ -3,14 +3,16 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"github.com/spf13/cobra"
-	"github.com/tetratelabs/istio-cost-analyzer/pkg"
-	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
-	"k8s.io/client-go/util/homedir"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/spf13/cobra"
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+	"k8s.io/client-go/util/homedir"
+
+	"github.com/tetratelabs/istio-cost-analyzer/pkg"
 )
 
 const prometheusEndpoint = "http://localhost:9990"

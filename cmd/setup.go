@@ -2,14 +2,16 @@ package cmd
 
 import (
 	"bytes"
+	"strings"
+
 	"github.com/spf13/cobra"
-	"github.com/tetratelabs/istio-cost-analyzer/pkg"
 	v1 "k8s.io/api/apps/v1"
 	v12 "k8s.io/api/core/v1"
 	v13 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8Yaml "k8s.io/apimachinery/pkg/util/yaml"
-	"strings"
+
+	"github.com/tetratelabs/istio-cost-analyzer/pkg"
 )
 
 var costAnalyzerSA = &v12.ServiceAccount{

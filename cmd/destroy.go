@@ -3,9 +3,11 @@ package cmd
 import (
 	"context"
 	"fmt"
+
 	"github.com/spf13/cobra"
-	"github.com/tetratelabs/istio-cost-analyzer/pkg"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/tetratelabs/istio-cost-analyzer/pkg"
 )
 
 var destroyOperator bool
