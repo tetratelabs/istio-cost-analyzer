@@ -106,7 +106,8 @@ func (k *KubeClient) TransformLocalityCalls(rawCalls []*Call) ([]*Call, error) {
 	return calls, nil
 }
 
-// getPodNode gets the node associated with a given pod name in the default namespece.
+// getPodNode gets the node associated with a given pod name in the default namespace.
+// nolint
 func (k *KubeClient) getPodNode(name, namespace string) (string, error) {
 	pod, err := k.clientSet.CoreV1().Pods(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
@@ -117,6 +118,7 @@ func (k *KubeClient) getPodNode(name, namespace string) (string, error) {
 }
 
 // getNodeLocality gets the locality given by topology.kubernetes.io.
+// nolint
 func (k *KubeClient) getNodeLocality(name, cloud string) (string, error) {
 	// if we are on AWS, we want to just get region, because availability zones
 	// are not supported yet.
@@ -126,6 +128,7 @@ func (k *KubeClient) getNodeLocality(name, cloud string) (string, error) {
 	return k.getNodeLabel(name, "topology.kubernetes.io/zone")
 }
 
+// nolint
 func (k *KubeClient) getNodeLabel(name, label string) (string, error) {
 	node, err := k.clientSet.CoreV1().Nodes().Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {

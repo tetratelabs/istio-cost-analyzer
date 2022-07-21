@@ -65,7 +65,7 @@ func main() {
 		return
 	}
 	awsRegNames := []string{}
-	for c, _ := range regionCodes {
+	for c := range regionCodes {
 		awsRegNames = append(awsRegNames, c)
 	}
 	outRates := map[string]map[string]float64{}
@@ -107,7 +107,7 @@ func main() {
 		return
 	}
 	fmt.Printf("outputting data to %v\n", out)
-	f.Write(output)
+	_, _ = f.Write(output)
 }
 
 func MostSimilar(want string, cont []string) string {
