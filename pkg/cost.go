@@ -78,8 +78,8 @@ func (c *CostAnalysis) CalculateEgress(calls []*Call) (float64, error) {
 			fmt.Printf("unable to find rate for link between %v and %v, skipping...\n", v.From, v.To)
 			continue
 		}
-		// 1 mb = 10^-9 gb
-		cost := rate * (float64(v.CallSize) * math.Pow(10, -6))
+		// 1 byte = 10^-9 gb
+		cost := rate * (float64(v.CallSize) * math.Pow(10, -9))
 		calls[i].CallCost = cost
 		totalCost += cost
 	}
