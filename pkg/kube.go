@@ -84,11 +84,11 @@ func NewAnalyzerKube(kubeconfig string) *KubeClient {
 	}
 }
 
-// TransformLocalityCalls takes a raw list of type Call and collapses the data
+// CollapseLocalityCalls takes a raw list of type Call and collapses the data
 // into a per-link basis (there might be multiple metrics for locality a->b)
 // todo maybe do this directly in prom.go and make it O(n) instead of O(2n)
 // sort of legacy?
-func (k *KubeClient) TransformLocalityCalls(rawCalls []*Call) ([]*Call, error) {
+func (k *KubeClient) CollapseLocalityCalls(rawCalls []*Call) ([]*Call, error) {
 	calls := make([]*Call, 0)
 	// serviceCallMap's keys are just workload/locality links, without any call size information,
 	// while the map value is the full, aggregated call value for that link. We do this because there may
