@@ -51,7 +51,7 @@ func NewAnalyzerProm(promEndpoint, cloud string) (*CostAnalyzerProm, error) {
 	}
 	// assume gcp
 	regex := "^[a-z]+-[a-z]+\\d-[a-z]$"
-	if cloud == "aws" {
+	if Cloud(cloud).IsAWS() {
 		regex = "^[a-z]+-[a-z]+-\\d$"
 	}
 	return &CostAnalyzerProm{
