@@ -117,7 +117,7 @@ func TestCostAnalysis_CalculateEgress(t *testing.T) {
 				{
 					From:     "us-east1-b",
 					To:       "us-west1-b",
-					CallSize: uint64(math.Pow(10, 6)),
+					CallSize: uint64(math.Pow(10, 9)),
 				},
 			},
 			expectedTotal: 0.00,
@@ -129,13 +129,13 @@ func TestCostAnalysis_CalculateEgress(t *testing.T) {
 				{
 					From:     "us-west1-b",
 					To:       "us-east1-b",
-					CallSize: uint64(math.Pow(10, 6)),
+					CallSize: uint64(math.Pow(10, 9)),
 					CallCost: 0.9,
 				},
 				{
 					From:     "us-west1-b",
 					To:       "us-west1-c",
-					CallSize: uint64(math.Pow(10, 6)),
+					CallSize: uint64(math.Pow(10, 9)),
 					CallCost: 0.5,
 				},
 			},

@@ -101,7 +101,7 @@ var analyzeCmd = &cobra.Command{
 			return err
 		}
 		// transform raw pod calls to locality information
-		localityCalls, err = kubeClient.TransformLocalityCalls(localityCalls)
+		localityCalls, err = kubeClient.CollapseLocalityCalls(localityCalls)
 		if err != nil {
 			return err
 		}
