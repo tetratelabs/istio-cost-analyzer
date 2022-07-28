@@ -88,3 +88,8 @@ istio-cost-analyzer destroy
 You must set the `--analyzerNamespace` flag if you set it in the `setup` command.
 
 You must also edit your Istio Operator config to remove the custom prometheus metrics. (you can use `-o` to do that here, but it's unstable)
+
+
+
+
+- add for latency:

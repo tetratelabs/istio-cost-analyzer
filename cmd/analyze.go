@@ -57,11 +57,7 @@ var analyzeCmd = &cobra.Command{
 	Short: "List all the service links in the mesh",
 	Long:  ``,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		analyzerProm, err := pkg.NewAnalyzerProm(prometheusEndpoint, cloud)
 		kubeClient := pkg.NewAnalyzerKube(kubeconfig)
-		if err != nil {
-			return err
-		}
 		// if a custom price path isn't provided, use the default price path for the cloud
 		// the cluster is on.
 		if pricePath == "" {
@@ -81,6 +77,10 @@ var analyzeCmd = &cobra.Command{
 			fmt.Printf("found cloud: %s\n", cloud)
 		}
 		fmt.Printf("using pricing file: %s\n", pricePath)
+		analyzerProm, err := pkg.NewAnalyzerProm(prometheusEndpoint, cloud)
+		if err != nil {
+			return err
+		}
 		// initialize analyzer
 		cost, err := pkg.NewCostAnalysis(pricePath)
 		if err != nil {
@@ -105,6 +105,7 @@ var analyzeCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
+		localityCalls[0].From = "us-east1-c"
 		// calculate egress given locality information
 		totalCost, err := cost.CalculateEgress(localityCalls)
 		if err != nil {
