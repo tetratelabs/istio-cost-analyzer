@@ -35,6 +35,8 @@ var (
 	cloud             string
 	pricePath         string
 	queryBefore       string
+	start             string
+	end               string
 	details           bool
 	promNs            string
 	analyzerNamespace string
@@ -91,12 +93,27 @@ var analyzeCmd = &cobra.Command{
 		if err := analyzerProm.WaitForProm(); err != nil {
 			return err
 		}
-		duration, err := time.ParseDuration(queryBefore)
-		if err != nil {
-			return err
+		var endTime time.Time
+		var startTime *time.Time
+		if end == "" {
+			endTime = time.Now()
+		} else {
+			endTime, err = time.Parse(time.RFC3339, end)
+			if err != nil {
+				return err
+			}
+		}
+		st, err := time.Parse(time.RFC3339, start)
+		if start == "" {
+			startTime = nil
+		} else {
+			if err != nil {
+				return err
+			}
+			startTime = &st
 		}
 		// query prometheus for raw pod calls
-		localityCalls, err := analyzerProm.GetCalls(duration)
+		localityCalls, err := analyzerProm.GetCalls(startTime, &endTime)
 		if err != nil {
 			return err
 		}
@@ -105,7 +122,6 @@ var analyzeCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		localityCalls[0].From = "us-east1-c"
 		// calculate egress given locality information
 		totalCost, err := cost.CalculateEgress(localityCalls)
 		if err != nil {
@@ -132,6 +148,8 @@ func init() {
 	analyzeCmd.PersistentFlags().StringVar(&queryBefore, "queryBefore", "0s", "if provided a time duration (go format), dapani will only use data from that much time ago and before.")
 	analyzeCmd.PersistentFlags().BoolVar(&details, "details", false, "if true, tool will provide a more detailed view of egress costs, including both destination and source")
 	analyzeCmd.PersistentFlags().StringVar(&promNs, "promNamespace", "istio-system", "promNs that the prometheus pod lives in, if different from analyzerNamespace")
+	analyzeCmd.PersistentFlags().StringVar(&start, "start", "", "if provided, the cost analyzer will analyze costs from this time onwards")
+	analyzeCmd.PersistentFlags().StringVar(&end, "end", "", "if provided, the cost analyzer will analyze costs up to this time")
 
 	rootCmd.PersistentFlags().StringVar(&cloud, "cloud", "", "aws/gcp/azure are provided by default. if nothing is set, cloud info is inferred.")
 	rootCmd.PersistentFlags().StringVar(&analyzerNamespace, "analyzerNamespace", "istio-system", "namespace that the cost analyzer and associated resources lives in")
