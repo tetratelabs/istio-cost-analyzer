@@ -106,17 +106,81 @@ func (d *CostAnalyzerProm) WaitForProm() error {
 // GetCalls queries the prometheus API for istio_request_bytes_sum, given a time range.
 // returns an array of Calls, which contain locality and workload information.
 // todo take an actual timerange, and not the hacky "since" parameter.
-func (d *CostAnalyzerProm) GetCalls(since time.Duration) ([]*Call, error) {
+func (d *CostAnalyzerProm) GetCalls(start, end *time.Time) ([]*Call, error) {
 	promApi := v1.NewAPI(d.client)
 	calls := make([]*Call, 0)
 	query := "istio_request_bytes_sum{destination_locality!=\"\", destination_locality!=\"unknown\"}"
 	var result model.Value
 	var warn v1.Warnings
 	var err error
-	if since == 0 {
-		result, warn, err = promApi.Query(context.Background(), query, time.Now())
+	if start == nil {
+		fmt.Printf("EFN")
+		result, warn, err = promApi.Query(context.Background(), query, *end)
+		v := result.(model.Vector)
+		for i := 0; i < len(v); i++ {
+			// check if the locality is valid with regexp, if not, throw it out
+			// we do this because anyone can set labels on pods, and we don't want to
+			// count those.
+			if !d.validateLocality(string(v[i].Metric["destination_locality"])) {
+				fmt.Printf("skipping invalid destination locality: %v\n", v[i].Metric["destination_locality"])
+				continue
+			}
+			if !d.validateLocality(string(v[i].Metric["locality"])) {
+				fmt.Printf("skipping invalid source locality: %v\n", v[i].Metric["locality"])
+				continue
+			}
+			calls = append(calls, &Call{
+				From:         string(v[i].Metric["destination_locality"]),
+				To:           string(v[i].Metric["locality"]),
+				ToWorkload:   string(v[i].Metric["destination_workload"]),
+				FromWorkload: string(v[i].Metric["source_workload"]),
+				CallSize:     uint64(v[i].Value),
+			})
+		}
 	} else {
-		result, warn, err = promApi.Query(context.Background(), query, time.Now().Add(-since))
+		// query across timerange
+		startResult, _, err := promApi.Query(context.Background(), query, *start)
+		if err != nil {
+			return nil, err
+		}
+		endResult, _, err := promApi.Query(context.Background(), query, *end)
+		if err != nil {
+			return nil, err
+		}
+		startV := startResult.(model.Vector)
+		endV := endResult.(model.Vector)
+		for i := 0; i < len(startV); i++ {
+			if !d.validateLocality(string(startV[i].Metric["destination_locality"])) {
+				fmt.Printf("skipping invalid destination locality: %v\n", startV[i].Metric["destination_locality"])
+				continue
+			}
+			if !d.validateLocality(string(startV[i].Metric["locality"])) {
+				fmt.Printf("skipping invalid source locality: %v\n", startV[i].Metric["locality"])
+				continue
+			}
+			for j := 0; j < len(endV); j++ {
+				if !d.validateLocality(string(endV[j].Metric["destination_locality"])) {
+					fmt.Printf("skipping invalid destination locality: %v\n", endV[j].Metric["destination_locality"])
+					continue
+				}
+				if !d.validateLocality(string(endV[j].Metric["locality"])) {
+					fmt.Printf("skipping invalid source locality: %v\n", endV[j].Metric["locality"])
+					continue
+				}
+				if string(startV[i].Metric["destination_locality"]) == string(endV[j].Metric["destination_locality"]) &&
+					string(startV[i].Metric["locality"]) == string(endV[j].Metric["locality"]) &&
+					string(startV[i].Metric["destination_workload"]) == string(endV[j].Metric["destination_workload"]) &&
+					string(startV[i].Metric["source_workload"]) == string(endV[j].Metric["source_workload"]) {
+					calls = append(calls, &Call{
+						From:         string(startV[i].Metric["destination_locality"]),
+						To:           string(startV[i].Metric["locality"]),
+						ToWorkload:   string(startV[i].Metric["destination_workload"]),
+						FromWorkload: string(startV[i].Metric["source_workload"]),
+						CallSize:     uint64(endV[j].Value) - uint64(startV[i].Value),
+					})
+				}
+			}
+		}
 	}
 	if err != nil {
 		fmt.Printf("error querying prom: %v", err)
@@ -125,27 +189,11 @@ func (d *CostAnalyzerProm) GetCalls(since time.Duration) ([]*Call, error) {
 	if len(warn) > 0 {
 		fmt.Printf("Warn: %v", warn)
 	}
-	v := result.(model.Vector)
-	for i := 0; i < len(v); i++ {
-		// check if the locality is valid with regexp, if not, throw it out
-		// we do this because anyone can set labels on pods, and we don't want to
-		// count those.
-		if destMatch, _ := regexp.MatchString(d.localityMatch, string(v[i].Metric["destination_locality"])); !destMatch {
-			fmt.Printf("skipping invalid destination locality: %v\n", v[i].Metric["destination_locality"])
-			continue
-		}
-		if sourceMatch, _ := regexp.MatchString(d.localityMatch, string(v[i].Metric["locality"])); !sourceMatch {
-			fmt.Printf("skipping invalid source locality: %v\n", v[i].Metric["locality"])
-			continue
-		}
 
-		calls = append(calls, &Call{
-			From:         string(v[i].Metric["destination_locality"]),
-			To:           string(v[i].Metric["locality"]),
-			ToWorkload:   string(v[i].Metric["destination_workload"]),
-			FromWorkload: string(v[i].Metric["source_workload"]),
-			CallSize:     uint64(v[i].Value),
-		})
-	}
 	return calls, nil
+}
+
+func (d *CostAnalyzerProm) validateLocality(locality string) bool {
+	b, _ := regexp.MatchString(d.localityMatch, locality)
+	return b
 }

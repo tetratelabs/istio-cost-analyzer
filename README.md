@@ -45,12 +45,14 @@ Run:
 istio-cost-analyzer analyze
 ```
 
-| Flag                |                                                                           Description                                                                           |           Default Value |
-|:--------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------:|------------------------:|
-| cloud               |                              Cloud on which your cluster is running (node info varies cloud to cloud). Options are `gcp` or `aws`.                              | Inferred from Node info |
-| prometheusNamespace |                                        Namespace in which the prometheus pod exists (you usually don't need to set this)                                        |          `istio-system` |
-| pricePath           | For non-standard aws/gcp rates (on-prem, negotiated rates). If you set this, you don't need to set `cloud`. See `/pricing` (you usually don't need to set this) |                    None |
-| details             |                              Extended table view that shows both destination and source workload/locality, instead of just source.                              |                 `false` |
+| Flag                |                                                                                  Description                                                                                  |            Default Value |
+|:--------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|-------------------------:|
+| cloud               | Cloud on which your cluster is running (node info varies cloud to cloud). Options are `gcp` or `aws`. If you are on GCP or AWS, you don't need to set this as it is inferred. |  Inferred from Node info |
+| prometheusNamespace |                                               Namespace in which the prometheus pod exists (you usually don't need to set this)                                               |           `istio-system` |
+| pricePath           |        For non-standard aws/gcp rates (on-prem, negotiated rates). If you set this, you don't need to set `cloud`. See `/pricing` (you usually don't need to set this)        |                     None |
+| details             |                                     Extended table view that shows both destination and source workload/locality, instead of just source.                                     |                  `false` |
+| start               |                                                    RFC3999 UTC timestamp that indicates from when to start analyzing data.                                                    |            0 (beginning) |
+| end                 |                                                     RFC3999 UTC timestamp that indicates to when to stop analyzing data.                                                      |             `time.Now()` |
 
 
 The output should look like (without `--details`): 
