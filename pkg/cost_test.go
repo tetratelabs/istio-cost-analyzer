@@ -62,7 +62,7 @@ func TestNewCostAnalysis(t *testing.T) {
 		},
 		{
 			name:          "nonexistent url",
-			priceLocation: "https://goo.bar/elmo.json",
+			priceLocation: "https://idontexistforsure.nope/elmo.json",
 			expected:      nil,
 			expectedError: true,
 		},
