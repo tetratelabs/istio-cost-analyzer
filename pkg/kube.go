@@ -272,7 +272,6 @@ func (k *KubeClient) DeleteOperatorConfig(opName, opNs string) error {
 func normalizeOperator(res *unstructured.Unstructured) (*unstructured.Unstructured, bool) {
 	// lord forgive me for I have sinned
 	// theres probably a better way to figure this out with JSONPatch but i'm lazy
-	// todo you fucking forgot telemetry v2 proemetheus
 	if v := res.Object["spec"].(map[string]interface{})["values"]; v == nil {
 		res.Object["spec"].(map[string]interface{})["values"] = make(map[string]interface{})
 	}
@@ -288,13 +287,6 @@ func normalizeOperator(res *unstructured.Unstructured) (*unstructured.Unstructur
 	if v := res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["v2"].(map[string]interface{})["prometheus"].(map[string]interface{})["configOverride"]; v == nil {
 		res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["v2"].(map[string]interface{})["prometheus"].(map[string]interface{})["configOverride"] = make(map[string]interface{})
 	}
-	if v := res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["v2"].(map[string]interface{})["prometheus"].(map[string]interface{})["configOverride"].(map[string]interface{})["inboundSidecar"]; v == nil {
-		res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["v2"].(map[string]interface{})["prometheus"].(map[string]interface{})["configOverride"].(map[string]interface{})["inboundSidecar"] = make(map[string]interface{})
-	}
-	inbound := res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["v2"].(map[string]interface{})["prometheus"].(map[string]interface{})["configOverride"].(map[string]interface{})["inboundSidecar"].(map[string]interface{})["metrics"]
-	if inbound == nil {
-		inbound = make([]interface{}, 0)
-	}
 	if v := res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["v2"].(map[string]interface{})["prometheus"].(map[string]interface{})["configOverride"].(map[string]interface{})["outboundSidecar"]; v == nil {
 		res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["v2"].(map[string]interface{})["prometheus"].(map[string]interface{})["configOverride"].(map[string]interface{})["outboundSidecar"] = make(map[string]interface{})
 	}
@@ -304,24 +296,10 @@ func normalizeOperator(res *unstructured.Unstructured) (*unstructured.Unstructur
 	}
 
 	// check if we already wrote
-	for _, i := range inbound.([]interface{}) {
-		if i.(map[string]interface{})["dimensions"] != nil && i.(map[string]interface{})["dimensions"].(map[string]interface{})["destination_locality"] != nil {
-			return res, false
-		}
-	}
 	for _, o := range outbound.([]interface{}) {
 		if o.(map[string]interface{})["dimensions"] != nil && o.(map[string]interface{})["dimensions"].(map[string]interface{})["destination_locality"] != nil {
 			return res, false
 		}
-	}
-
-	// actual config
-	// we dont want to override anything
-	for i, in := range inbound.([]interface{}) {
-		if in.(map[string]interface{})["name"].(string) == "request_bytes" {
-			in.(map[string]interface{})["dimensions"].(map[string]interface{})["destination_locality"] = "downstream_peer.labels['locality'].value"
-		}
-		inbound.([]interface{})[i] = in
 	}
 
 	for i, out := range outbound.([]interface{}) {
@@ -329,15 +307,6 @@ func normalizeOperator(res *unstructured.Unstructured) (*unstructured.Unstructur
 			out.(map[string]interface{})["dimensions"].(map[string]interface{})["destination_locality"] = "upstream_peer.labels['locality'].value"
 		}
 		outbound.([]interface{})[i] = out
-	}
-
-	if len(inbound.([]interface{})) == 0 {
-		inbound = append(inbound.([]interface{}), map[string]interface{}{
-			"name": "request_bytes",
-			"dimensions": map[string]interface{}{
-				"destination_locality": "downstream_peer.labels['locality'].value",
-			},
-		})
 	}
 
 	if len(outbound.([]interface{})) == 0 {
@@ -349,7 +318,6 @@ func normalizeOperator(res *unstructured.Unstructured) (*unstructured.Unstructur
 		})
 	}
 
-	res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["v2"].(map[string]interface{})["prometheus"].(map[string]interface{})["configOverride"].(map[string]interface{})["inboundSidecar"].(map[string]interface{})["metrics"] = inbound
 	res.Object["spec"].(map[string]interface{})["values"].(map[string]interface{})["telemetry"].(map[string]interface{})["v2"].(map[string]interface{})["prometheus"].(map[string]interface{})["configOverride"].(map[string]interface{})["outboundSidecar"].(map[string]interface{})["metrics"] = outbound
 	return res, true
 }
