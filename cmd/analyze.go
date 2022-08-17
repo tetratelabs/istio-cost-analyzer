@@ -56,6 +56,7 @@ const (
 )
 
 func printf1(statement string, len int, arr []) {
+	//useVerb := analyzeCmd.PersistentFlags().Bool("v", false, "if true verbose output mode is enabled")
 	if *useverb {
 		if len == 0 {
 			fmt.println(statement)
