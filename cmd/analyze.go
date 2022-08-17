@@ -56,7 +56,8 @@ const (
 )
 
 func printf1(statement string, len int, arr []) {
-	useVerb := analyzeCmd.PersistentFlags().Bool("v", false, "if true verbose output mode is enabled")
+	//useVerb := analyzeCmd.PersistentFlags().Bool("v", false, "if true verbose output mode is enabled")
+	//flag.Parse()
 	if *useverb {
 		if len == 0 {
 			fmt.println(statement)
@@ -165,6 +166,7 @@ func init() {
 	analyzeCmd.PersistentFlags().StringVar(&promNs, "prometheusNamespace", "istio-system", "promNs that the prometheus pod lives in, if different from analyzerNamespace")
 	analyzeCmd.PersistentFlags().StringVar(&start, "start", "", "if provided, the cost analyzer will analyze costs from this time onwards")
 	analyzeCmd.PersistentFlags().StringVar(&end, "end", "", "if provided, the cost analyzer will analyze costs up to this time")
+	useverb := analyzeCmd.PersistentFlags().Bool("v", false, "if true verbose output mode is enabled")
 
 	rootCmd.PersistentFlags().StringVar(&cloud, "cloud", "", "aws/gcp/azure are provided by default. if nothing is set, cloud info is inferred.")
 	rootCmd.PersistentFlags().StringVar(&analyzerNamespace, "analyzerNamespace", "istio-system", "namespace that the cost analyzer and associated resources lives in")
