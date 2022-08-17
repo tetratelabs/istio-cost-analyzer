@@ -27,6 +27,7 @@ import (
 	"k8s.io/client-go/util/homedir"
 
 	"github.com/tetratelabs/istio-cost-analyzer/pkg"
+	"strconv"
 )
 
 const prometheusEndpoint = "http://localhost:9990"
@@ -54,6 +55,16 @@ const (
 	awsPricingLocation = "https://raw.githubusercontent.com/tetratelabs/istio-cost-analyzer/master/pricing/aws/aws_pricing.json"
 )
 
+func printf1(statement string, len int, arr []) {
+	if *useverb {
+		if len == 0 {
+			fmt.println(statement)
+		}
+		if len == 1 {
+			fmt.printf(statement, arr[0])
+		}
+	}
+}
 var analyzeCmd = &cobra.Command{
 	Use:   "analyze",
 	Short: "List all the service links in the mesh",
@@ -74,11 +85,14 @@ var analyzeCmd = &cobra.Command{
 			} else {
 				// we don't have a price path or cloud, so fail
 				fmt.Println("when no price path is provided, the only supported clouds are gcp and aws. couldn't infer cloud info.")
+				printf1("when no price path is provided, the only supported clouds are gcp and aws. couldn't infer cloud info.", 0, [])
 				return errors.New("provide different cloud")
 			}
 			fmt.Printf("found cloud: %s\n", cloud)
+			printf1("found cloud: %s\n", 1, [string(cloud)]
 		}
 		fmt.Printf("using pricing file: %s\n", pricePath)
+		printf1("using pricing file: %s\n", 1, [string(pricePath])
 		analyzerProm, err := pkg.NewAnalyzerProm(prometheusEndpoint, cloud)
 		if err != nil {
 			return err
@@ -147,7 +161,7 @@ func init() {
 	analyzeCmd.PersistentFlags().StringVar(&pricePath, "pricePath", "", "if custom egress rates are provided, dapani will use the rates in this file.")
 	analyzeCmd.PersistentFlags().StringVar(&queryBefore, "queryBefore", "0s", "if provided a time duration (go format), dapani will only use data from that much time ago and before.")
 	analyzeCmd.PersistentFlags().BoolVar(&details, "details", false, "if true, tool will provide a more detailed view of egress costs, including both destination and source")
-	analyzeCmd.PersistentFlags().BoolP("v", "", true, "if true verbose output mode is enabled")
+	useVerb := analyzeCmd.PersistentFlags().Bool("v", false, "if true verbose output mode is enabled")
 	analyzeCmd.PersistentFlags().StringVar(&promNs, "prometheusNamespace", "istio-system", "promNs that the prometheus pod lives in, if different from analyzerNamespace")
 	analyzeCmd.PersistentFlags().StringVar(&start, "start", "", "if provided, the cost analyzer will analyze costs from this time onwards")
 	analyzeCmd.PersistentFlags().StringVar(&end, "end", "", "if provided, the cost analyzer will analyze costs up to this time")
