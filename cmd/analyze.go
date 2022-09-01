@@ -56,14 +56,14 @@ const (
 	awsPricingLocation = "https://raw.githubusercontent.com/tetratelabs/istio-cost-analyzer/master/pricing/aws/aws_pricing.json"
 )
 
-func printf1(statement string, len int, arr []) {
-	useverb := analyzeCmd.PersistentFlags().Lookup("v")
+func printf1(statement string, leng int, arr []string) {
+	useverb := rootCmd.PersistentFlags().Lookup("v")
 	
 	if useverb != nil {
-		if len == 0 {
-			fmt.println(statement)
+		if leng == 0 {
+			fmt.Println(statement)
 		}
-		if len == 1 {
+		if leng == 1 {
 			fmt.printf(statement, arr[0])
 		}
 	}
@@ -92,7 +92,7 @@ var analyzeCmd = &cobra.Command{
 				return errors.New("provide different cloud")
 			}
 			fmt.Printf("found cloud: %s\n", cloud)
-			printf1("found cloud: %s\n", 1, [string(cloud)]
+			printf1("found cloud: %s\n", 1, [string(cloud)])
 		}
 		fmt.Printf("using pricing file: %s\n", pricePath)
 		printf1("using pricing file: %s\n", 1, [string(pricePath])
@@ -167,7 +167,7 @@ func init() {
 	analyzeCmd.PersistentFlags().StringVar(&promNs, "prometheusNamespace", "istio-system", "promNs that the prometheus pod lives in, if different from analyzerNamespace")
 	analyzeCmd.PersistentFlags().StringVar(&start, "start", "", "if provided, the cost analyzer will analyze costs from this time onwards")
 	analyzeCmd.PersistentFlags().StringVar(&end, "end", "", "if provided, the cost analyzer will analyze costs up to this time")
-	analyzeCmd.PersistentFlags().BoolVar(&verb, "v", false, "if true verbose output mode is enabled")
+	rootCmd.PersistentFlags().BoolVar(&verb, "v", false, "if true verbose output mode is enabled")
 
 	rootCmd.PersistentFlags().StringVar(&cloud, "cloud", "", "aws/gcp/azure are provided by default. if nothing is set, cloud info is inferred.")
 	rootCmd.PersistentFlags().StringVar(&analyzerNamespace, "analyzerNamespace", "istio-system", "namespace that the cost analyzer and associated resources lives in")
