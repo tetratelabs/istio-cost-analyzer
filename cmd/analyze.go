@@ -56,16 +56,11 @@ const (
 	awsPricingLocation = "https://raw.githubusercontent.com/tetratelabs/istio-cost-analyzer/master/pricing/aws/aws_pricing.json"
 )
 
-func printf1(statement string, leng int, arr []string) {
+func printf1(statement string) {
 	useverb := rootCmd.PersistentFlags().Lookup("v")
 	
 	if useverb != nil {
-		if leng == 0 {
-			fmt.Println(statement)
-		}
-		if leng == 1 {
-			fmt.printf(statement, arr[0])
-		}
+		fmt.Println(statement)
 	}
 }
 var analyzeCmd = &cobra.Command{
@@ -87,15 +82,16 @@ var analyzeCmd = &cobra.Command{
 				pricePath = awsPricingLocation
 			} else {
 				// we don't have a price path or cloud, so fail
-				fmt.Println("when no price path is provided, the only supported clouds are gcp and aws. couldn't infer cloud info.")
-				printf1("when no price path is provided, the only supported clouds are gcp and aws. couldn't infer cloud info.", 0, [])
+				words := fmt.Sprintf("when no price path is provided, the only supported clouds are gcp and aws. couldn't infer cloud info.")
+				printf1(words)
 				return errors.New("provide different cloud")
 			}
-			fmt.Printf("found cloud: %s\n", cloud)
-			printf1("found cloud: %s\n", 1, [string(cloud)])
+			words := fmt.Sprintf("found cloud: %s\n", cloud)
+			
+			printf1(words)
 		}
-		fmt.Printf("using pricing file: %s\n", pricePath)
-		printf1("using pricing file: %s\n", 1, [string(pricePath])
+		words := fmt.Sprintf("using pricing file: %s\n", pricePath)
+		printf1(words)
 		analyzerProm, err := pkg.NewAnalyzerProm(prometheusEndpoint, cloud)
 		if err != nil {
 			return err
