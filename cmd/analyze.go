@@ -56,7 +56,7 @@ const (
 	awsPricingLocation = "https://raw.githubusercontent.com/tetratelabs/istio-cost-analyzer/master/pricing/aws/aws_pricing.json"
 )
 
-func printf1(statement string) {
+func verboseprinter(statement string) {
 	useverb := rootCmd.PersistentFlags().Lookup("v")
 	
 	if useverb != nil {
@@ -83,15 +83,15 @@ var analyzeCmd = &cobra.Command{
 			} else {
 				// we don't have a price path or cloud, so fail
 				words := fmt.Sprintf("when no price path is provided, the only supported clouds are gcp and aws. couldn't infer cloud info.")
-				printf1(words)
+				verboseprinter(words)
 				return errors.New("provide different cloud")
 			}
 			words := fmt.Sprintf("found cloud: %s\n", cloud)
 			
-			printf1(words)
+			verboseprinter(words)
 		}
 		words := fmt.Sprintf("using pricing file: %s\n", pricePath)
-		printf1(words)
+		verboseprinter(words)
 		analyzerProm, err := pkg.NewAnalyzerProm(prometheusEndpoint, cloud)
 		if err != nil {
 			return err
