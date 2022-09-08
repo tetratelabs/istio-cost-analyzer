@@ -56,9 +56,9 @@ const (
 	awsPricingLocation = "https://raw.githubusercontent.com/tetratelabs/istio-cost-analyzer/master/pricing/aws/aws_pricing.json"
 )
 
-func verboseprinter(statement string) {
-	useverb := rootCmd.PersistentFlags().Lookup("v")
-	
+useverb := rootCmd.PersistentFlags().Lookup("v")
+
+func verboseprinter(statement string) {	
 	if useverb != nil {
 		fmt.Println(statement)
 	}
