@@ -1,6 +1,6 @@
 module github.com/tetratelabs/istio-cost-analyzer
 
-go 1.17
+go 1.20
 
 require (
 	github.com/olekukonko/tablewriter v0.0.5
